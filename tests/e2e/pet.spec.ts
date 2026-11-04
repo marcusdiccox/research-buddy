@@ -81,7 +81,8 @@ test('fox settings change live and reduced motion turns off animation', async ()
   await settingsPage.getByLabel('Where Pip roams').selectOption('parked');
   await settingsPage.getByLabel('Joke style').selectOption('nerdy');
   await expect(settingsPage.getByLabel('How often Pip chats')).toHaveCount(0);
-  await settingsPage.getByLabel('Reduce motion').check();
+  await settingsPage.getByLabel('Reduce motion').click();
+  await expect(settingsPage.getByLabel('Reduce motion')).toBeChecked();
   await expect(pet.locator('.desktop-fox')).toHaveClass(/motion-reduced/);
   expect(await pet.locator('.fox-sprite').evaluate((e) => getComputedStyle(e).animationName)).toBe(
     'none',
