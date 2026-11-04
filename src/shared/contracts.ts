@@ -48,6 +48,23 @@ export interface Reminder {
   notificationFailures?: number;
   notificationError?: boolean;
   createdAt: string;
+  calendarSync?: boolean;
+}
+export interface CalendarStatus {
+  configured: boolean;
+  connected: boolean;
+  autoSync: boolean;
+  pending: number;
+  error?: string;
+  lastSyncAt?: string;
+}
+export interface CalendarLink {
+  id: string;
+  eventId?: string;
+  fingerprint?: string;
+  state: 'pending' | 'synced' | 'error';
+  error?: string;
+  syncedAt?: string;
 }
 export interface JournalEntry {
   id: string;
@@ -84,6 +101,7 @@ export interface Snapshot {
   settings: Settings;
   hasApiKey: boolean;
   companion?: { shortcutAvailable: boolean; activeShortcut: string | null };
+  calendar?: CalendarStatus;
 }
 export interface PetView {
   pose:
@@ -125,6 +143,7 @@ export interface ReminderDraft {
   details?: string;
   dueAt: string;
   durationMinutes: number;
+  calendarSync?: boolean;
 }
 export interface JournalDraft {
   entryId?: string;

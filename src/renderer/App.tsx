@@ -921,7 +921,7 @@ export default function App() {
                     Local files aren’t encrypted. Imported notes aren’t live market data. Quick
                     summary selects key passages; it doesn’t replace reading the full source.
                   </p>
-                  <span className="version">RESEARCH BUDDY · EARLY ACCESS 0.2</span>
+                  <span className="version">RESEARCH BUDDY · EARLY ACCESS 0.3</span>
                 </section>
               </div>
             </>

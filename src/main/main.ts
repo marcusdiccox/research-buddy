@@ -9,16 +9,18 @@ import {
   Menu,
   nativeImage,
   screen,
+  safeStorage,
 } from 'electron';
 import { join, dirname, basename, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { BuddyStore, text } from '../core/store.js';
 import { summarize, answerFromNotes } from '../core/research.js';
 import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
 import { deliverDueReminders } from '../core/notifications.js';
 import { CompanionController } from './companion.js';
+import { CalendarSync, type CalendarConnection } from '../core/calendar-sync.js';
 import type { NoteDraft, JournalDraft, ReminderDraft, Settings } from '../shared/contracts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -29,9 +31,13 @@ app.setName('Research Buddy');
 app.setAppUserModelId('com.researchbuddy.desktop');
 let workspace: BrowserWindow | undefined,
   companion: CompanionController | undefined,
+  notepad: BrowserWindow | undefined,
+  foxSettings: BrowserWindow | undefined,
+  calendar: CalendarSync | undefined,
   tray: Tray | undefined,
   db: BuddyStore,
   quitting = false;
+let notepadReady: Promise<void> | undefined, settingsReady: Promise<void> | undefined;
 const notices = new Set<Notification>();
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
@@ -64,6 +70,60 @@ function baseWindow(options: Electron.BrowserWindowConstructorOptions) {
 function load(win: BrowserWindow, hash = '') {
   return win.loadFile(join(here, '../../dist/index.html'), { hash });
 }
+async function showNotepad(action: 'notes' | 'reminder' = 'notes') {
+  if (!notepad || notepad.isDestroyed()) {
+    notepad = baseWindow({
+      width: 520,
+      height: 600,
+      minWidth: 420,
+      minHeight: 480,
+      show: false,
+      title: 'Pip’s notepad',
+      backgroundColor: '#fbfaf6',
+    });
+    notepad.setMenuBarVisibility(false);
+    notepad.on('close', (event) => {
+      if (!quitting) {
+        event.preventDefault();
+        notepad?.hide();
+      }
+    });
+    notepadReady = load(notepad, 'notepad');
+  }
+  await notepadReady;
+  notepad.show();
+  notepad.focus();
+  notepad.webContents.send('buddy:navigate', action);
+}
+async function showFoxSettings() {
+  if (!foxSettings || foxSettings.isDestroyed()) {
+    foxSettings = baseWindow({
+      width: 400,
+      height: 590,
+      minWidth: 360,
+      minHeight: 480,
+      show: false,
+      title: 'Fox settings',
+      backgroundColor: '#fbfaf6',
+    });
+    foxSettings.setMenuBarVisibility(false);
+    foxSettings.on('close', (event) => {
+      if (!quitting) {
+        event.preventDefault();
+        foxSettings?.hide();
+      }
+    });
+    settingsReady = load(foxSettings, 'fox-settings');
+  }
+  await settingsReady;
+  foxSettings.show();
+  foxSettings.focus();
+}
+function openNotepad(action: 'notes' | 'reminder' | 'settings' = 'notes') {
+  void (action === 'settings' ? showFoxSettings() : showNotepad(action)).catch(() =>
+    dialog.showErrorBox('Pip could not open', 'Please restart Research Buddy and try again.'),
+  );
+}
 function notifyDue() {
   if (!db || !db.settings().notifications || !Notification.isSupported() || testMode) return;
   deliverDueReminders(
@@ -88,7 +148,7 @@ function notifyDue() {
 }
 if (!testMode && !app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', showWorkspace);
+  app.on('second-instance', () => openNotepad());
   app
     .whenReady()
     .then(async () => {
@@ -112,14 +172,37 @@ else {
         }
       });
       await load(workspace);
+      const connectionFile = join(app.getPath('userData'), 'google-calendar.enc');
+      calendar = new CalendarSync({
+        store: db,
+        openExternal: (url) => shell.openExternal(url),
+        onChange: changed,
+        load: () => {
+          if (!existsSync(connectionFile)) return undefined;
+          if (!safeStorage.isEncryptionAvailable())
+            throw new Error('Secure storage is unavailable.');
+          return JSON.parse(
+            safeStorage.decryptString(readFileSync(connectionFile)),
+          ) as CalendarConnection;
+        },
+        save: (value) => {
+          if (!safeStorage.isEncryptionAvailable())
+            throw new Error(
+              'Windows secure storage is unavailable. Google credentials were not saved.',
+            );
+          writeFileSync(connectionFile + '.tmp', safeStorage.encryptString(JSON.stringify(value)));
+          renameSync(connectionFile + '.tmp', connectionFile);
+        },
+      });
+      if (!testMode) {
+        setInterval(() => void calendar?.sync(), 30000).unref();
+        void calendar.sync();
+      }
       companion = new CompanionController({
         store: db,
         createWindow: baseWindow,
         loadWindow: load,
-        openNotebook: (action) => {
-          showWorkspace();
-          workspace?.webContents.send('buddy:navigate', action);
-        },
+        openNotebook: openNotepad,
         onChange: changed,
         autoShow: !testMode,
       });
@@ -127,7 +210,9 @@ else {
       tray.setToolTip('Research Buddy');
       tray.setContextMenu(
         Menu.buildFromTemplate([
-          { label: 'Open Research Buddy', click: showWorkspace },
+          { label: 'Open Pip’s notepad', click: () => openNotepad() },
+          { label: 'Fox settings', click: () => openNotepad('settings') },
+          { label: 'All research tools', click: showWorkspace },
           {
             label: 'Show / hide Pip',
             click: () => {
@@ -144,7 +229,7 @@ else {
           },
         ]),
       );
-      tray.on('double-click', showWorkspace);
+      tray.on('double-click', () => openNotepad());
       screen.on('display-removed', () => companion?.clamp());
       screen.on('display-metrics-changed', () => companion?.clamp());
       setInterval(notifyDue, 15000).unref();
@@ -158,18 +243,19 @@ else {
 app.on('before-quit', () => {
   quitting = true;
   companion?.dispose();
+  calendar?.dispose();
 });
 app.on('will-quit', () => {
   companion?.dispose();
   db?.close();
 });
-app.on('activate', showWorkspace);
+app.on('activate', () => openNotepad());
 
 ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
   if (
     !sender ||
-    ![workspace, companion?.window].includes(sender) ||
+    ![workspace, companion?.window, notepad, foxSettings].includes(sender) ||
     event.senderFrame !== event.sender.mainFrame
   )
     return { ok: false, error: 'This action is not available.' };
@@ -184,7 +270,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
     let value: unknown;
     switch (action) {
       case 'snapshot':
-        value = { ...db.snapshot(), companion: companion?.status };
+        value = { ...db.snapshot(), companion: companion?.status, calendar: calendar?.status };
         break;
       case 'createProject':
         value = db.createProject({
@@ -289,6 +375,54 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         companion?.configure();
         break;
       }
+      case 'calendarStatus':
+        value = calendar?.status;
+        break;
+      case 'calendarConfigure': {
+        if (!calendar) throw new Error('Calendar is not ready.');
+        const result = await dialog.showOpenDialog(sender, {
+          title: 'Choose Google Desktop app credentials',
+          filters: [{ name: 'Google client JSON', extensions: ['json'] }],
+          properties: ['openFile'],
+        });
+        if (!result.canceled && result.filePaths[0]) {
+          if (statSync(result.filePaths[0]).size > 65536)
+            throw new Error('Choose a Google Desktop client JSON file smaller than64KB.');
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(readFileSync(result.filePaths[0], 'utf8'));
+          } catch {
+            throw new Error('That file is not valid Google client JSON.');
+          }
+          calendar.configure(parsed);
+        }
+        value = calendar.status;
+        break;
+      }
+      case 'calendarConnect':
+        await calendar?.connect();
+        value = calendar?.status;
+        break;
+      case 'calendarDisconnect':
+        await calendar?.disconnect();
+        value = calendar?.status;
+        break;
+      case 'calendarCancelConnect':
+        calendar?.cancelConnect();
+        value = true;
+        break;
+      case 'calendarSync':
+        await calendar?.sync();
+        value = calendar?.status;
+        break;
+      case 'showNotepad':
+        await showNotepad(data.action === 'reminder' ? 'reminder' : 'notes');
+        value = true;
+        break;
+      case 'showFoxSettings':
+        await showFoxSettings();
+        value = true;
+        break;
       case 'showWorkspace':
         showWorkspace();
         value = true;
@@ -349,11 +483,14 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       default:
         throw new Error('That action is not available.');
     }
+    if (['saveReminder', 'completeReminder', 'snoozeReminder'].includes(action))
+      void calendar?.sync();
     if (
       ![
         'snapshot',
         'revision',
         'calendarPreview',
+        'calendarStatus',
         'importFile',
         'petState',
         'petRegions',

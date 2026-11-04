@@ -81,22 +81,11 @@ export function FoxSettings({
               <option value="nerdy">Nerdy little jokes</option>
             </select>
           </label>
-          <label>
-            How often Pip chats
-            <select
-              value={settings.petChatter}
-              onChange={(e) => onChange({ petChatter: e.target.value as Settings['petChatter'] })}
-            >
-              <option value="quiet">Quiet · every 4–7 min</option>
-              <option value="friendly">Friendly · every 1½–3 min</option>
-              <option value="chatty">Chatty · every 30–60 sec</option>
-              <option value="off">Off · only when I ask</option>
-            </select>
-          </label>
         </div>
         <p className="fox-choice-description">
           Pip stays on the screen where you place it, avoids the taskbar, and pauses when you
-          interact. Speech bubbles are silent and disappear after a moment.
+          interact. Pip shares little jokes automatically. Speech bubbles are silent and disappear
+          after a moment.
         </p>
         <SettingToggle
           label="Reduce motion"

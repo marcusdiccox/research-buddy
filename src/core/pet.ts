@@ -10,20 +10,6 @@ export const defaultPetPreferences: PetPreferences = {
 export type Point = { x: number; y: number };
 export type WorkArea = Point & { width: number; height: number };
 export const petWindowSize = { width: 240, height: 260 };
-const help = [
-  'Need a paw? Click me to open your notebook.',
-  'Any little things you’d like me to remember?',
-  'A tiny step still counts. You’re doing fine.',
-  'I’m on important fox business. Mostly strolling.',
-  'A sip of water and a little stretch, perhaps?',
-  'Your next good idea can start as a messy note.',
-  'I can hold a reminder while you hold that thought.',
-  'Just checking in. No rush, I’m right here.',
-  'Quietly cheering for you from down here.',
-  'My schedule? Walk. Wiggle. Be helpful. Repeat.',
-  'Big thoughts, small paws. We’ve got this.',
-  'Fox tip: you don’t have to finish everything today.',
-];
 const jokes: Record<PetPreferences['petJokeStyle'], string[]> = {
   wholesome: [
     'Why did the fox bring a blanket? For a little undercover work.',
@@ -126,6 +112,8 @@ export class PetBehavior {
   private frame: PetFrame;
   private restUntil: number;
   private walkUntil = 0;
+  private pace = 18;
+  private entrance: { targetX: number } | null = null;
   private target: Point | null = null;
   private nextSpeech: number;
   private bubbleUntil = 0;
@@ -142,20 +130,14 @@ export class PetBehavior {
   ) {
     this.frame = { ...position, pose: 'idle', direction: 1, phrase: null };
     this.lastInteraction = now;
-    this.restUntil = now + this.range(1800, 3500);
-    this.nextSpeech = now + this.speechInterval();
+    this.restUntil = now + this.range(3500, 7000);
+    this.nextSpeech = now + this.range(18000, 30000);
   }
   private range(min: number, max: number) {
     return min + Math.max(0, Math.min(0.999999, this.random())) * (max - min);
   }
   private speechInterval() {
-    const bounds = {
-      off: [Infinity, Infinity],
-      quiet: [240000, 420000],
-      friendly: [90000, 180000],
-      chatty: [30000, 60000],
-    }[this.preferences.petChatter];
-    return bounds[0] === Infinity ? Infinity : this.range(bounds[0], bounds[1]);
+    return this.range(35000, 65000);
   }
   private choose(pool: string[]) {
     const candidates = pool.filter((p) => p !== this.previousPhrase);
@@ -173,20 +155,21 @@ export class PetBehavior {
   configure(preferences: PetPreferences, now: number) {
     this.preferences = preferences;
     this.resume(now);
-    if (preferences.petChatter === 'off') this.dismiss();
   }
   place(position: Point) {
+    this.entrance = null;
     this.frame.x = position.x;
     this.frame.y = position.y;
     this.target = null;
   }
   resume(now: number) {
+    this.entrance = null;
     this.target = null;
     this.transition = null;
     this.lastInteraction = now;
     this.frame.pose = 'idle';
-    this.restUntil = now + this.range(1800, 3500);
-    this.nextSpeech = now + this.speechInterval();
+    this.restUntil = now + this.range(3500, 7000);
+    this.nextSpeech = now + this.range(18000, 30000);
   }
   dismiss() {
     this.frame.phrase = null;
@@ -237,6 +220,19 @@ export class PetBehavior {
   snapshot(): PetFrame {
     return { ...this.frame };
   }
+  enter(area: WorkArea, size: { width: number; height: number }, now: number, reduced = false) {
+    this.resume(now);
+    if (reduced || this.preferences.petReducedMotion) {
+      this.place(clampPetPosition(this.frame, size, [area]));
+      return;
+    }
+    const left = this.random() < 0.5;
+    this.frame.y = area.y + Math.max(0, area.height - size.height - 12);
+    this.frame.x = left ? area.x - 160 : area.x + area.width - 80;
+    this.frame.direction = left ? 1 : -1;
+    this.frame.pose = 'walking';
+    this.entrance = { targetX: left ? area.x : area.x + Math.max(0, area.width - size.width) };
+  }
   tick(
     now: number,
     elapsed: number,
@@ -245,9 +241,32 @@ export class PetBehavior {
     flags: Flags,
   ): PetFrame {
     if (flags.visible === false) {
+      this.entrance = null;
       this.dismiss();
       this.frame.pose = 'idle';
       return this.snapshot();
+    }
+    if (this.entrance) {
+      if (flags.reducedMotion || this.preferences.petReducedMotion) {
+        this.entrance = null;
+        this.frame.pose = 'idle';
+      } else {
+        if (flags.hovered || flags.menuOpen || flags.dragging) {
+          this.interact(now);
+          this.frame.pose = 'idle';
+          return this.snapshot();
+        }
+        this.frame.pose = 'walking';
+        const dx = this.entrance.targetX - this.frame.x;
+        const step = Math.min(Math.abs(dx), (24 * Math.max(0, Math.min(elapsed, 250))) / 1000);
+        this.frame.x += Math.sign(dx) * step;
+        if (Math.abs(this.entrance.targetX - this.frame.x) < 0.1) {
+          this.entrance = null;
+          this.restUntil = now + this.range(3500, 7000);
+          this.setPose('idle', now);
+        }
+        return this.snapshot();
+      }
     }
     const bounded = clampPetPosition(this.frame, size, [area]);
     this.frame.x = bounded.x;
@@ -278,10 +297,7 @@ export class PetBehavior {
       return this.snapshot();
     }
     if (!paused && now >= this.nextSpeech) {
-      this.say(
-        this.choose(this.random() < 0.65 ? help : jokes[this.preferences.petJokeStyle]),
-        now,
-      );
+      this.say(this.choose(jokes[this.preferences.petJokeStyle]), now);
       this.nextSpeech = now + this.speechInterval();
     }
     if (
@@ -300,21 +316,23 @@ export class PetBehavior {
         Math.hypot(this.target.x - this.frame.x, this.target.y - this.frame.y) < 2)
     ) {
       this.target = null;
-      this.restUntil = now + this.range(1800, 4000);
+      this.restUntil = now + this.range(3500, 7000);
     }
     if (!this.target && now >= this.restUntil) {
       const maxX = area.x + Math.max(0, area.width - size.width),
         maxY = area.y + Math.max(0, area.height - size.height) - 12;
+      this.frame.direction = this.random() < 0.5 ? -1 : 1;
+      this.pace = this.range(12, 24);
       if (this.preferences.petRoamArea === 'bottom') {
         let x = Math.max(
           area.x,
-          Math.min(maxX, this.frame.x + this.frame.direction * this.range(120, 280)),
+          Math.min(maxX, this.frame.x + this.frame.direction * this.range(50, 160)),
         );
         if (Math.abs(x - this.frame.x) < 20) {
           this.frame.direction = this.frame.direction === 1 ? -1 : 1;
           x = Math.max(
             area.x,
-            Math.min(maxX, this.frame.x + this.frame.direction * this.range(120, 280)),
+            Math.min(maxX, this.frame.x + this.frame.direction * this.range(50, 160)),
           );
         }
         this.target = { x, y: Math.max(area.y, maxY) };
@@ -324,7 +342,7 @@ export class PetBehavior {
           y: this.range(area.y, Math.max(area.y, maxY)),
         };
       this.frame.direction = this.target.x < this.frame.x ? -1 : 1;
-      this.walkUntil = now + this.range(7000, 12000);
+      this.walkUntil = now + this.range(4000, 8000);
     }
     if (this.target) {
       this.setPose('walking', now, flags.reducedMotion);
@@ -332,7 +350,7 @@ export class PetBehavior {
       const dx = this.target.x - this.frame.x,
         dy = this.target.y - this.frame.y,
         distance = Math.hypot(dx, dy),
-        step = Math.min(distance, (32 * Math.max(0, Math.min(elapsed, 250))) / 1000);
+        step = Math.min(distance, (this.pace * Math.max(0, Math.min(elapsed, 250))) / 1000);
       if (distance > 0) {
         this.frame.x += (dx / distance) * step;
         this.frame.y += (dy / distance) * step;

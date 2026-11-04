@@ -2,35 +2,34 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: working early Windows build · fox update 0.2.** The first version works locally without an account, API key, or subscription. Hosted AI and calendar account sync are future work.
+**Status: early Windows build · compact notebook update 0.3.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
-![Pip’s red pixel-fox poses](docs/screenshots/fox-red.png)
+![Pip’s compact notebook with fictional notes](docs/screenshots/compact-notepad.png)
 
 ## Try it
 
-Download the Windows installer from the [verified fox Windows build](https://github.com/marcusdiccox/research-buddy/actions/runs/41848963978): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+Download the Windows installer from the latest successful [Windows build](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
-For the local fox update, open **`release-fox-final/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+For the local update, open **`release-pip-notepad/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
-1. Launch Research Buddy. You’ll see just the fox; click Pip and choose **Open my notebook**. Click **Try a sample workspace** to look around using fictional research, or **Add a note** to start with your own text.
+1. Click Pip to open its small notepad, with **Notes**, **Reminders**, and **Calendar** tabs. The Settings button opens separate compact fox settings. **All research tools** opens the larger notebook for the research features below.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
 3. Use **Ask my notes** to find relevant passages across the current workspace.
 4. Add a reminder, or record your thinking in **Thesis journal**.
-5. Press **Ctrl + Alt + P** to show or hide Pip while using any app. The system tray is always a fallback.
+5. Press **Ctrl + Alt + P** to show or hide Pip. Restoring Pip gives it a slow walk-on entrance; reduced motion skips it. Ctrl+Alt+Delete is reserved by Windows. The tray is always a fallback.
 
 The early build is unsigned. Windows may show its usual prompt for an unrecognized app. Supported target: Windows 11 x64; this build was exercised on the development computer, not a separate clean machine.
 
 ## Make the fox your own
 
-Click Pip → **Fox settings** to choose:
+Use the small notepad’s Settings button, or right-click Pip → **Fox settings**, to choose:
 
 - **Red Fox**, **Arctic Fox**, or **Midnight Fox**.
 - **Bottom edge**, **whole screen**, or **stay where I put Pip**.
 - **Cute & wholesome**, **dad jokes & puns**, or **nerdy little jokes**.
-- Quiet, friendly, chatty, or no automatic chatter.
 - Reduced motion and your preferred show/hide shortcut.
 
-Pip’s background is genuinely transparent, and unused space passes clicks through to your desktop. The fox pauses when you hover, drag it, or open its menu. Bubbles are silent and disappear after eight seconds. Pip takes a nap automatically after two minutes without fox interaction. Hover or click to wake it with a little stretch. Sitting, standing, walking, curling up and waking have their own transition frames; shorter rests make Pip more active.
+Pip is smaller now: an 80px control, random left/right strolls at 12–24px/s, 3½–7s rests and 4–8s walks. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake, without a manual joke button. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
 
 ## What works
 
@@ -40,8 +39,8 @@ Pip’s background is genuinely transparent, and unused space passes clicks thro
 - **Saved evidence:** editing a note preserves its earlier versions. Old summaries are marked as needing a fresh look when their source changes.
 - **Thesis journal:** record a thesis, counterarguments, and conditions that would change your mind. Revisions preserve all fields and attached evidence.
 - **Reminders:** save a date/time and duration, receive Windows notifications while the app is running, snooze for 15 minutes, complete, and reopen. Failed native delivery remains retryable with backoff.
-- **Calendar actions:** **Add to Google Calendar** opens a prefilled event in your browser; review it and click **Save** there. **Calendar file** saves an `.ics` event for other calendar apps. This is not account sync or automatic insertion.
-- **Pip and the tray:** drag the fox itself to move it. Click for a reminder, a joke or settings. Hide/restore with your shortcut or tray menu. Closing the notebook leaves Research Buddy in the tray; **Quit Research Buddy** stops it.
+- **Connected Calendar:** sign in from the compact Calendar tab, then mark reminders for automatic creation/update in your primary Google calendar while Pip runs. Pending changes retry. This is one-way; Google-side edits are not imported. [Setup and permissions](docs/google-calendar-setup.md). Manual event drafts and `.ics` export remain available.
+- **Pip and the tray:** drag the fox to move it. Click for the notepad; right-click for tools/settings. Hide/restore with your shortcut or tray. Closing a window keeps Pip running; **Quit Research Buddy** stops it.
 - **Portable research:** export readable Markdown with sources, summaries, journal history, evidence links, and workspace reminders.
 
 ## A few practical details

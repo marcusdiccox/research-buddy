@@ -19,6 +19,20 @@ test.afterEach(async () => {
   await app?.close();
   rmSync(dir, { recursive: true, force: true });
 });
+test('advanced research settings still expose notifications and export', async () => {
+  const page = await app.firstWindow();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Show desktop notifications')).toBeVisible();
+  await page.getByLabel('Show desktop notifications').click();
+  await expect(page.getByLabel('Show desktop notifications')).not.toBeChecked();
+  await expect
+    .poll(
+      async () =>
+        (await page.evaluate(() => window.buddy!.call<any>('snapshot'))).settings.notifications,
+    )
+    .toBe(false);
+  await expect(page.getByRole('button', { name: 'Export this workspace' })).toBeVisible();
+});
 test('a beginner can save a note, summarize it, inspect evidence and restart', async () => {
   const page = await app.firstWindow();
   await expect(page.getByRole('heading', { name: 'A little clarity, every day.' })).toBeVisible();

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BookOpen, Bell, MessageCircle, Settings, X } from 'lucide-react';
+import { BookOpen, Bell, Settings, X } from 'lucide-react';
 import { Fox } from './Fox';
 import type { HitRegion, PetView } from '../shared/contracts';
 import './pet.css';
@@ -119,10 +119,10 @@ export function PetWindow() {
         ref={button}
         className="fox-pet-button"
         data-pet-hit="ellipse"
-        aria-label="Pip the fox — open menu"
+        aria-label="Pip the fox — open notepad"
         aria-haspopup="menu"
         aria-expanded={!!view?.menuOpen}
-        title={`Click for help · drag to move · ${view?.activeShortcut ? view.activeShortcut.replace('Control', 'Ctrl').replaceAll('+', ' + ') + ' to hide' : 'use the tray to hide or restore Pip'}`}
+        title={`Click for notes · right-click for tools · drag to move · ${view?.activeShortcut ? view.activeShortcut.replace('Control', 'Ctrl').replaceAll('+', ' + ') + ' to hide' : 'use the tray to hide or restore Pip'}`}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -136,7 +136,7 @@ export function PetWindow() {
           if (e.currentTarget.hasPointerCapture(e.pointerId))
             e.currentTarget.releasePointerCapture(e.pointerId);
           void call('petDrag', { dragging: false }).then(() => {
-            if (Math.hypot(e.screenX - start.x, e.screenY - start.y) < 6) act('menu');
+            if (Math.hypot(e.screenX - start.x, e.screenY - start.y) < 6) act('notes');
           });
         }}
         onPointerCancel={() => {
@@ -144,7 +144,7 @@ export function PetWindow() {
           void call('petDrag', { dragging: false });
         }}
         onClick={(e) => {
-          if (e.detail === 0) act('menu');
+          if (e.detail === 0) act('notes');
         }}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -178,10 +178,6 @@ export function PetWindow() {
           <button role="menuitem" onClick={() => act('reminder')}>
             <Bell size={15} />
             New reminder
-          </button>
-          <button role="menuitem" onClick={() => act('joke')}>
-            <MessageCircle size={15} />
-            Tell me a joke
           </button>
           <button role="menuitem" onClick={() => act('settings')}>
             <Settings size={15} />

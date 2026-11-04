@@ -11,6 +11,27 @@ import { BuddyStore } from '../src/core/store';
 const area = { x: -1920, y: 0, width: 1920, height: 1040 };
 const size = { width: 240, height: 260 };
 describe('fox movement and chatter', () => {
+  it('walks on from the screen edge when summoned, respecting hover and reduced motion', () => {
+    const desktop = { x: 0, y: 0, width: 1600, height: 900 };
+    const pet = new PetBehavior(defaultPetPreferences, { x: 700, y: 628 }, 0, () => 0);
+    pet.enter(desktop, size, 0);
+    expect(pet.snapshot().x).toBeLessThan(0);
+    expect(pet.snapshot().direction).toBe(1);
+    const start = pet.snapshot().x;
+    pet.tick(100, 100, desktop, size, { hovered: true });
+    expect(pet.snapshot().x).toBe(start);
+    for (let t = 200; t < 9000; t += 100) pet.tick(t, 100, desktop, size, {});
+    expect(pet.snapshot().x).toBeGreaterThanOrEqual(0);
+    const still = new PetBehavior(
+      { ...defaultPetPreferences, petReducedMotion: true },
+      { x: 700, y: 628 },
+      0,
+      () => 0,
+    );
+    still.enter(desktop, size, 0);
+    expect(still.snapshot().x).toBeGreaterThanOrEqual(0);
+    expect(still.snapshot().pose).toBe('idle');
+  });
   it('walks along the bottom of a negative-coordinate monitor without leaving its work area', () => {
     const pet = new PetBehavior(defaultPetPreferences, { x: -400, y: 768 }, 0, () => 0.5);
     const positions: number[] = [];
@@ -56,8 +77,8 @@ describe('fox movement and chatter', () => {
       () => 0.5,
     );
     const desktop = { x: 0, y: 0, width: 1200, height: 900 };
-    expect(pet.tick(4000, 100, desktop, size, {}).pose).toBe('standing-up');
-    expect(pet.tick(4800, 100, desktop, size, {}).pose).toBe('walking');
+    expect(pet.tick(6000, 100, desktop, size, {}).pose).toBe('standing-up');
+    expect(pet.tick(6800, 100, desktop, size, {}).pose).toBe('walking');
     pet.interact(119000);
     expect(pet.tick(120000, 100, desktop, size, {}).pose).not.toBe('sleeping');
     expect(pet.tick(239000, 100, desktop, size, {}).pose).toBe('curling-up');
@@ -85,38 +106,39 @@ describe('fox movement and chatter', () => {
     }
     expect(ys.size).toBeGreaterThan(10);
   });
-  it('respects silent mode and selects different jokes when asked twice', () => {
+  it('tells automatic themed jokes even with a legacy off setting, without repeats', () => {
     const pet = new PetBehavior(
-      { ...defaultPetPreferences, petChatter: 'off', petJokeStyle: 'dad' },
+      { ...defaultPetPreferences, petChatter: 'off', petJokeStyle: 'dad', petRoamArea: 'parked' },
       { x: 10, y: 10 },
       0,
       () => 0,
     );
-    expect(
-      pet.tick(900000, 100, { x: 0, y: 0, width: 1200, height: 900 }, size, {}).phrase,
-    ).toBeNull();
-    const a = pet.tellJoke(900000);
-    const b = pet.tellJoke(900001);
-    expect(a).not.toBe(b);
-    expect(a.length).toBeGreaterThan(10);
-    expect(
-      pet.tick(910000, 100, { x: 0, y: 0, width: 1200, height: 900 }, size, {}).phrase,
-    ).toBeNull();
-  });
-  it('spaces automatic speech by the configured frequency and does not repeat consecutive phrases', () => {
-    const pet = new PetBehavior(
-      { ...defaultPetPreferences, petChatter: 'chatty', petRoamArea: 'parked' },
-      { x: 10, y: 10 },
-      0,
-      () => 0,
-    );
-    expect(
-      pet.tick(29999, 100, { x: 0, y: 0, width: 1200, height: 900 }, size, {}).phrase,
-    ).toBeNull();
-    const first = pet.tick(30000, 100, { x: 0, y: 0, width: 1200, height: 900 }, size, {}).phrase;
-    expect(first).not.toBeNull();
-    const next = pet.tick(60000, 100, { x: 0, y: 0, width: 1200, height: 900 }, size, {}).phrase;
+    const desktop = { x: 0, y: 0, width: 1200, height: 900 };
+    expect(pet.tick(17999, 100, desktop, size, {}).phrase).toBeNull();
+    const first = pet.tick(18000, 100, desktop, size, {}).phrase;
+    expect(first).toBe('I only know 25 letters of the alphabet. I don’t know y.');
+    expect(pet.tick(27000, 100, desktop, size, {}).phrase).toBeNull();
+    const next = pet.tick(53000, 100, desktop, size, {}).phrase;
+    expect(next).toBeTruthy();
     expect(next).not.toBe(first);
+  });
+  it('uses varied slow paces and randomly reverses before reaching an edge', () => {
+    const desktop = { x: 0, y: 0, width: 1600, height: 900 };
+    const measure = (random: number) => {
+      const pet = new PetBehavior(defaultPetPreferences, { x: 700, y: 628 }, 0, () => random);
+      pet.tick(7100, 100, desktop, size, {});
+      pet.tick(7800, 100, desktop, size, {});
+      const before = pet.snapshot().x;
+      const frame = pet.tick(8000, 200, desktop, size, {});
+      return frame.x - before;
+    };
+    const slow = measure(0),
+      fast = measure(0.99);
+    expect(slow).toBeLessThan(0);
+    expect(fast).toBeGreaterThan(0);
+    expect(Math.abs(slow)).toBeCloseTo(2.4, 6);
+    expect(Math.abs(fast)).toBeLessThanOrEqual(4.8);
+    expect(Math.abs(fast)).toBeGreaterThan(Math.abs(slow));
   });
   it('only captures clicks on actual pet or menu surfaces', () => {
     const regions = [

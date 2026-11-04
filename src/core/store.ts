@@ -12,6 +12,7 @@ import type {
   ResearchResult,
   Snapshot,
   Settings,
+  CalendarLink,
 } from '../shared/contracts.js';
 
 const defaults: Settings = {
@@ -88,6 +89,12 @@ export class BuddyStore {
       settings: this.settings(),
       hasApiKey: false,
     };
+  }
+  calendarLinks(): CalendarLink[] {
+    return this.all<CalendarLink>('calendar-link');
+  }
+  saveCalendarLink(link: CalendarLink) {
+    this.put('calendar-link', link);
   }
   settings(): Settings {
     const rows = this.all<Settings & { id: string }>('settings');
@@ -230,6 +237,8 @@ export class BuddyStore {
       dueAt: validDate(input.dueAt),
       durationMinutes: input.durationMinutes,
       completed: old?.completed ?? false,
+      calendarSync:
+        typeof input.calendarSync === 'boolean' ? input.calendarSync : (old?.calendarSync ?? false),
       notifiedAt: null,
       createdAt: old?.createdAt ?? new Date().toISOString(),
     };

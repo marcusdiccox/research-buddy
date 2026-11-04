@@ -100,9 +100,9 @@ html.pet-mode #root {
 .fox-pet-button {
   position: absolute;
   bottom: 8px;
-  left: 68px;
-  width: 104px;
-  height: 104px;
+  left: 80px;
+  width: 80px;
+  height: 80px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -123,9 +123,9 @@ html.pet-mode #root {
 }
 .fox-bubble {
   position: absolute;
-  bottom: 119px;
-  left: 10px;
-  width: 220px;
+  bottom: 95px;
+  left: 35px;
+  width: 170px;
   max-height: 106px;
   background: #fffdf5;
   border: 1px solid #d6c3a8;
@@ -135,7 +135,7 @@ html.pet-mode #root {
   z-index: 2;
 }
 .fox-bubble p {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.5;
   margin: 0;
   color: #5c574a;
@@ -162,7 +162,7 @@ html.pet-mode #root {
 .fox-bubble-tip {
   position: absolute;
   bottom: -7px;
-  left: 90px;
+  left: 75px;
   width: 12px;
   height: 12px;
   background: #fffdf5;

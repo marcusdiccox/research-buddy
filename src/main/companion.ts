@@ -27,7 +27,7 @@ export class CompanionController {
   private disposed = false;
   private menuOpen = false;
   private systemReduced = false;
-  private regions: HitRegion[] = [{ x: 68, y: 148, width: 104, height: 104, shape: 'ellipse' }];
+  private regions: HitRegion[] = [{ x: 80, y: 172, width: 80, height: 80, shape: 'ellipse' }];
   private ignoring = true;
   private drag: { cursor: { x: number; y: number }; origin: { x: number; y: number } } | null =
     null;
@@ -50,8 +50,7 @@ export class CompanionController {
     this.behavior = new PetBehavior(settings, position, Date.now());
     this.visible = settings.petVisible;
     this.bindShortcut();
-    if (this.visible && options.autoShow && settings.petChatter !== 'off')
-      this.behavior.wake(Date.now());
+    if (this.visible && options.autoShow && true) this.behavior.wake(Date.now());
     if (this.visible) this.create();
   }
   private bindShortcut() {
@@ -109,7 +108,7 @@ export class CompanionController {
     });
     this.window = window;
     this.ignoring = true;
-    this.regions = [{ x: 68, y: 148, width: 104, height: 104, shape: 'ellipse' }];
+    this.regions = [{ x: 80, y: 172, width: 80, height: 80, shape: 'ellipse' }];
     window.setMenuBarVisibility(false);
     window.setIgnoreMouseEvents(true, { forward: true });
     window.on('show', () => this.start());
@@ -154,13 +153,20 @@ export class CompanionController {
     this.publish(true);
     this.options.onChange();
   }
-  show() {
+  show(entrance = false) {
     this.visible = true;
     this.options.store.saveSettings({ petVisible: true });
     this.behavior.resume(Date.now());
     this.behavior.dismiss();
     this.menuOpen = false;
-    this.create().showInactive();
+    const window = this.create();
+    if (entrance) {
+      const area = screen.getDisplayMatching(window.getBounds()).workArea;
+      this.behavior.enter(area, window.getBounds(), Date.now(), this.systemReduced);
+      const frame = this.behavior.snapshot();
+      window.setPosition(Math.round(frame.x), Math.round(frame.y));
+    }
+    window.showInactive();
     this.publish(true);
     this.options.onChange();
   }
@@ -177,7 +183,7 @@ export class CompanionController {
   }
   toggle() {
     if (this.visible) this.hide();
-    else this.show();
+    else this.show(true);
   }
   private start() {
     if (this.timer) return;
@@ -205,7 +211,7 @@ export class CompanionController {
     if (!this.window || this.window.isDestroyed()) return;
     const position = clampPetPosition(
       this.window.getBounds(),
-      petWindowSize,
+      this.window.getBounds(),
       screen.getAllDisplays().map((d) => d.workArea),
     );
     this.window.setPosition(Math.round(position.x), Math.round(position.y));
@@ -240,14 +246,14 @@ export class CompanionController {
           x: this.drag.origin.x + cursor.x - this.drag.cursor.x,
           y: this.drag.origin.y + cursor.y - this.drag.cursor.y,
         },
-        petWindowSize,
+        bounds,
         screen.getAllDisplays().map((d) => d.workArea),
       );
       window.setPosition(Math.round(position.x), Math.round(position.y));
       this.behavior.place(position);
     }
     const prior = this.behavior.snapshot();
-    const frame = this.behavior.tick(now, elapsed, area, petWindowSize, {
+    const frame = this.behavior.tick(now, elapsed, area, bounds, {
       visible: true,
       hovered,
       menuOpen: this.menuOpen,

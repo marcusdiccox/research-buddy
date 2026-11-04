@@ -1,0 +1,399 @@
+.compact-shell {
+  width: 100%;
+  min-width: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 19px 22px 10px;
+  color: #304339;
+  background: #fbfaf6;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.compact-eyebrow {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #737c6d;
+}
+.compact-header h1 {
+  font-size: 29px;
+  letter-spacing: -0.8px;
+  margin: 4px 0 0;
+}
+.compact-icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  border: 1px solid #dfe3d7;
+  background: #fffefb;
+}
+.compact-icon-button:hover {
+  background: #edf1e6;
+}
+.compact-tabs {
+  display: flex;
+  padding: 4px;
+  gap: 3px;
+  background: #edf0e5;
+  border-radius: 10px;
+  margin-bottom: 17px;
+}
+.compact-tabs > button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 4px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.compact-tabs > button[aria-selected='true'] {
+  background: #fffefb;
+  color: #31533e;
+  box-shadow: 0 1px 3px #30433914;
+  font-weight: 600;
+}
+.compact-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.compact-shell label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #56614f;
+  margin: 0;
+  min-width: 0;
+}
+.compact-shell input:not([type='checkbox']),
+.compact-shell textarea,
+.compact-shell select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid #dce1d3;
+  border-radius: 7px;
+  padding: 9px 10px;
+  color: #304339;
+  background: #fffefb;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: none;
+}
+.compact-shell textarea {
+  resize: vertical;
+}
+.compact-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  min-width: 0;
+}
+.compact-note-form,
+.compact-note-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.compact-note-body {
+  flex: 1;
+}
+.compact-note-body textarea {
+  flex: 1;
+  min-height: 190px;
+  line-height: 1.65;
+  background: #fffefa;
+}
+.compact-picker-row,
+.compact-date-row {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+.compact-grow {
+  flex: 1;
+  min-width: 0;
+}
+.compact-date-row > label:last-child {
+  width: 85px;
+  flex-shrink: 0;
+}
+.compact-secondary,
+.compact-primary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  border-radius: 7px;
+  padding: 9px 11px;
+  font-size: 11px;
+  line-height: 1.4;
+  min-height: 35px;
+}
+.compact-secondary {
+  border: 1px solid #dce1d3;
+  background: #f4f5ed;
+}
+.compact-primary {
+  background: #365e4f;
+  color: #fff;
+  border: 1px solid #365e4f;
+}
+.compact-secondary:hover {
+  background: #e8eddf;
+}
+.compact-primary:hover {
+  background: #294a3d;
+}
+.compact-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 2px;
+}
+.compact-save-row > span {
+  color: #7a8072;
+  font-size: 10px;
+}
+.compact-save-row > button {
+  flex-shrink: 0;
+}
+.compact-shell .compact-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.compact-checkbox input {
+  accent-color: #365e4f;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  flex-shrink: 0;
+}
+.compact-message {
+  margin: 0 0 14px;
+  padding: 9px 11px;
+  border: 1px solid #d6e1cb;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #eff5e8;
+}
+.compact-message.is-error,
+.compact-inline-error {
+  color: #883c2b;
+  background: #fbede5;
+  border-color: #ebcaba;
+}
+.compact-calendar {
+  border: 1px solid #e0e4d8;
+  background: #f5f6ef;
+  border-radius: 10px;
+  padding: 13px;
+  margin-bottom: 17px;
+}
+.compact-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.compact-section-heading h2 {
+  font-size: 13px;
+  margin: 0;
+}
+.compact-connection {
+  font-size: 9px;
+  color: #73796e;
+  background: #e8ebdf;
+  border-radius: 12px;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+.compact-connection.connected {
+  color: #3c6149;
+  background: #deead4;
+}
+.compact-calendar p {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 9px 0;
+}
+.compact-calendar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+}
+.compact-setup-help {
+  margin: 10px 0 0;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #727a69;
+}
+.compact-setup-help summary {
+  cursor: pointer;
+}
+.compact-setup-help ol {
+  padding-left: 17px;
+  margin: 8px 0;
+}
+.compact-setup-help li + li {
+  margin-top: 5px;
+}
+.compact-text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #53684e;
+  padding: 5px 2px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.compact-hint {
+  margin: 0;
+  font-size: 10px;
+  color: #727a69;
+  line-height: 1.6;
+}
+.compact-inline-error {
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.compact-manual-draft {
+  margin-top: 12px;
+}
+.compact-footer {
+  display: flex;
+  justify-content: center;
+  padding: 13px 0 0;
+  margin-top: 8px;
+}
+.compact-loading {
+  flex: 1;
+}
+.compact-settings-shell {
+  padding: 19px 18px 12px;
+}
+.compact-settings-shell .compact-header {
+  margin-bottom: 14px;
+}
+.compact-settings-shell .settings-card {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+}
+.compact-settings-shell .settings-card > h2 {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+}
+.compact-settings-shell .fox-settings-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0 12px;
+  margin: 0;
+}
+.compact-settings-shell .fox-settings-preview p {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+}
+.compact-settings-shell .fox-preview {
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+}
+.compact-settings-shell .fox-settings-fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.compact-settings-shell .fox-settings-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 13px 0;
+}
+.compact-settings-shell .fox-settings-choices label {
+  font-size: 11px;
+}
+.compact-settings-shell .fox-settings-choices select {
+  font-size: 12px;
+}
+.compact-settings-shell .setting-toggle {
+  flex-direction: row;
+  gap: 10px;
+  margin: 0 0 13px !important;
+}
+.compact-settings-shell .setting-toggle strong {
+  font-size: 11px;
+}
+.compact-settings-shell .setting-toggle small {
+  font-size: 10px;
+  line-height: 1.5;
+}
+.compact-settings-shell .fox-choice-description {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #727a69;
+  margin: 12px 0;
+}
+.compact-settings-shell .fox-shortcut,
+.compact-settings-shell .shortcut-unavailable {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  line-height: 1.6;
+  margin: 13px 0 0;
+}
+.compact-settings-shell .fox-shortcut svg {
+  flex-shrink: 0;
+}
+@media (max-width: 440px) {
+  .compact-shell {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .compact-save-row > span {
+    max-width: 48%;
+  }
+  .compact-tabs > button {
+    gap: 5px;
+    font-size: 11px;
+  }
+}
