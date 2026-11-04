@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+playwright-report/
+test-results/
+.superpowers/
+.env*
+*.sqlite*
+*.log
+.DS_Store
