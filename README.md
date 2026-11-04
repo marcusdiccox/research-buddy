@@ -66,6 +66,8 @@ The renderer uses React and TypeScript, with an isolated preload bridge. Electro
 
 ## Roadmap and epic
 
+[Follow the GitHub epic and its ten child issues](https://github.com/marcusdiccox/research-buddy/issues/1).
+
 - [Epic and ten child issue specifications](docs/epics/research-buddy-v0.1.md)
 - [Product design](docs/superpowers/specs/2026-11-03-research-buddy-design.md)
 - [Original implementation plan](docs/superpowers/plans/2026-11-03-research-buddy.md)

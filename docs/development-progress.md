@@ -22,7 +22,7 @@ The user authorized implementation after planning and added cute, approachable d
 - `npm test`: 13/13 backend tests pass; `npm run typecheck` passes. Electron journeys currently verify notes/restart and reminder/calendar workflows; final full rerun plus accessibility checks is in progress.
 - Fixed completed-reminder usability discovered in E2E: reopening now returns to Upcoming. Test selector mistakes were corrected to scope visible breadcrumb and current journal text.
 - Hosted AI/provider credential management from the original long-term plan is not implemented in this first usable local build. UI explicitly labels extraction and passage search; it never simulates a live AI response. This keeps the first build usable without account setup.
-- No GitHub repository has been created; both connector and CLI still authenticate as CltadeI. User chose to switch to marcusdiccox; wait for that account rather than publishing under CltadeI.
+- During the initial build, GitHub publication waited for the requested account switch from CltadeI to marcusdiccox. This was resolved during publication below.
 
 ## Final verification of the first local build
 
@@ -32,4 +32,11 @@ The user authorized implementation after planning and added cute, approachable d
 - Independent review's three P2 findings fixed with failing-then-passing regressions: stale summary warning/suppression, complete journal history, and notification success acknowledgment plus failure retry/backoff and visible status.
 - Packaged SQLite persistence and source/research/reminder/journal flows verified. NSIS installer generated; no signing certificate or clean-machine installation is claimed.
 - SVG/PNG/ICO Pip artwork committed as code-native assets; app window, tray and installer use it.
-- Complete epic draft now contains RB-01 through RB-10. Remote publication is still blocked by the account mismatch, not by missing planning material.
+- Complete epic contains RB-01 through RB-10. The publication step below resolved the initial account mismatch.
+
+## GitHub publication
+
+- Switched GitHub CLI to marcusdiccox through the existing Chrome session, with explicit authorization and user-supplied email verification. No credentials or verification codes are stored in project files.
+- Created public repository https://github.com/marcusdiccox/research-buddy and pushed the verified source to main.
+- Published epic https://github.com/marcusdiccox/research-buddy/issues/1 and ten native child issues (#2–#11), with a v0.1 milestone.
+- Hosted CI was triggered by the initial push; local build/test evidence remains recorded in the release checklist.

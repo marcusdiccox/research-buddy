@@ -1,6 +1,6 @@
 # Epic: Research Buddy v0.1 — a desktop companion for company research
 
-**Status:** Draft, ready to copy into a GitHub issue. This is not a published issue.
+**Status:** Published as [GitHub epic #1](https://github.com/marcusdiccox/research-buddy/issues/1); first local build implemented, remaining work tracked in ten child issues.
 **Suggested labels:** `epic`, `v0.1`, `desktop`, `research` (create only if useful in the destination repository).
 **Milestone:** First usable Windows release.
 **Design:** [Product design](../superpowers/specs/2026-11-03-research-buddy-design.md)
@@ -33,18 +33,18 @@ Electron + React + TypeScript; SQLite/FTS5 for local persistence and retrieval; 
 
 ## Child issue checklist
 
-The RB identifiers are planning IDs, not GitHub issue numbers. Replace them with issue links when the destination repository is known.
+The RB identifiers are stable planning IDs. Each checklist entry links to its published GitHub issue; all ten are also native sub-issues of the epic.
 
-- [ ] **RB-01 — Deliver a packaged local workspace vertical slice**
-- [ ] **RB-02 — Import and find company research**
-- [ ] **RB-03 — Configure generation and protect credentials**
-- [ ] **RB-04 — Generate summaries with inspectable citations**
-- [ ] **RB-05 — Ask questions across one company's sources**
-- [ ] **RB-06 — Keep a thesis journal with history**
-- [ ] **RB-07 — Export a readable research dossier**
-- [ ] **RB-08 — Add the desktop companion and tray controls**
-- [ ] **RB-09 — Ship a demonstrable Windows release**
-- [ ] **RB-10 — Add persistent reminders and calendar actions**
+- [ ] **[RB-01 — Deliver a packaged local workspace vertical slice](https://github.com/marcusdiccox/research-buddy/issues/2)**
+- [ ] **[RB-02 — Import and find company research](https://github.com/marcusdiccox/research-buddy/issues/3)**
+- [ ] **[RB-03 — Configure generation and protect credentials](https://github.com/marcusdiccox/research-buddy/issues/4)**
+- [ ] **[RB-04 — Generate summaries with inspectable citations](https://github.com/marcusdiccox/research-buddy/issues/5)**
+- [ ] **[RB-05 — Ask questions across one company's sources](https://github.com/marcusdiccox/research-buddy/issues/6)**
+- [ ] **[RB-06 — Keep a thesis journal with history](https://github.com/marcusdiccox/research-buddy/issues/7)**
+- [ ] **[RB-07 — Export a readable research dossier](https://github.com/marcusdiccox/research-buddy/issues/8)**
+- [ ] **[RB-08 — Add the desktop companion and tray controls](https://github.com/marcusdiccox/research-buddy/issues/9)**
+- [ ] **[RB-09 — Ship a demonstrable Windows release](https://github.com/marcusdiccox/research-buddy/issues/10)**
+- [ ] **[RB-10 — Add persistent reminders and calendar actions](https://github.com/marcusdiccox/research-buddy/issues/11)**
 
 ## Child issue specifications
 
@@ -195,6 +195,10 @@ Original nine-issue planning estimate: **16–25 focused engineering days**, plu
 | Companion absorbs effort before research works | Basic state images only; RB-08 follows a working citation workflow |
 | Notes are mistaken for current market data | Preserve source dates; no implied live quotes |
 
-## Publishing note
+## Published project
 
-Requested destination: `marcusdiccox/research-buddy`, a new repository. The local Git repository and first working application exist. Publication is pending the user's chosen account switch: both GitHub connections still report `CltadeI`, which cannot create a repository owned by the separate personal account `marcusdiccox`. This file is the complete epic draft; replace RB IDs with returned issue numbers after publication.
+Public repository: https://github.com/marcusdiccox/research-buddy
+
+Epic: https://github.com/marcusdiccox/research-buddy/issues/1
+
+The epic has ten native sub-issues and the v0.1 milestone. The initial offline app is implemented; issues stay open until their complete acceptance criteria are reviewed.
