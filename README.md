@@ -8,7 +8,7 @@
 
 ## Try it
 
-Download the Windows installer from the latest successful [Windows build](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+Download the Windows installer from the [verified writing-bubble build](https://github.com/marcusdiccox/research-buddy/actions/runs/41909043594): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
 For the local update, open **`release-pip-bubble/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
