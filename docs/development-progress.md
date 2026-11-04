@@ -67,3 +67,12 @@ Plan: `docs/superpowers/plans/2026-11-04-fox-companion.md`.
 
 - Final normal-desktop checks confirmed visible walking, automatic curling/sleep, and global Ctrl+Alt+P hide/restore from Chrome. The updated app remains running on the development computer.
 - Public main commit `37a4bc0` passed hosted Windows type checks, all 24 backend tests, all 12 desktop journeys, NSIS packaging and installer artifact upload: https://github.com/marcusdiccox/research-buddy/actions/runs/41848963978.
+
+
+## Reminder and roaming update 0.5 - 2026-11-04
+
+- Fixed warnings at 1 day, 6 hours, 2 hours, 1 hour and 30 minutes, with a single per-event Remind me switch, persistent acknowledgements/retries and coalesced catch-up.
+- Pip and foreground editors queue readable alerts; changed/completed/disabled events are checked again before speaking. Editor drafts are retained.
+- Added persistent pin/unpin and native blur-to-hide, randomized bounded trips and 97 shuffled themed phrases.
+- TypeScript, 65 backend tests and 31 packaged desktop journeys passed. All 4,743 archive files passed integrity checks. Existing saved notebook content was backed up and verified preserved after normal restart; 0.5 remains running locally.
+- Hosted Windows verification and installer upload passed on attempt 2 after one transient Electron test-process shutdown timeout. [Detailed evidence and installer hash](reminders-update-verification.md).
