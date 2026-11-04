@@ -6,7 +6,7 @@ This setup is needed once for your own Google account. Pip's Calendar tab contai
 2. Enable **Google Calendar API** for that project.
 3. Open **Google Auth Platform**. Set the app name to Research Buddy and your support/contact email. For personal testing, choose External/Testing and add your own Google account as a test user. Request only `https://www.googleapis.com/auth/calendar.events.owned`.
 4. Create an OAuth client with application type **Desktop app** and download its JSON file. Do not use a Web application client or a service account key.
-5. In Pip's small notepad, choose **Calendar → Import Google credentials** and select that downloaded JSON. The imported client registration and tokens are encrypted using Windows secure storage in the app's local user-data folder. Do not add the JSON to GitHub.
+5. Click Pip, choose **Calendar → Connect in notebook**, then **Import Google credentials**, and select the downloaded JSON. The imported client registration and tokens are encrypted using Windows secure storage in the app's local user-data folder. Do not add the JSON to GitHub.
 6. Choose **Connect Google Calendar**. Complete Google's sign-in and permission screen yourself. Return to Pip when it says Connected.
 7. Create a fictional test reminder, choose its date/time, select calendar sync and save. After it shows synced, verify the event in your primary Google calendar. Edit the reminder and verify the same event changes. Pip retries pending changes while running.
 

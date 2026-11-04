@@ -2,17 +2,17 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · compact notebook update 0.3.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · writing bubble update 0.4.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
-![Pip’s compact notebook with fictional notes](docs/screenshots/compact-notepad.png)
+![Pip’s floating writing bubble with fictional notes](docs/screenshots/writing-bubble.png)
 
 ## Try it
 
 Download the Windows installer from the latest successful [Windows build](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
-For the local update, open **`release-pip-notepad/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+For the local update, open **`release-pip-bubble/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
-1. Click Pip to open its small notepad, with **Notes**, **Reminders**, and **Calendar** tabs. The Settings button opens separate compact fox settings. **All research tools** opens the larger notebook for the research features below.
+1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The gear opens minimal fox settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
 3. Use **Ask my notes** to find relevant passages across the current workspace.
 4. Add a reminder, or record your thinking in **Thesis journal**.

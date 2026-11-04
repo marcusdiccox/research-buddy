@@ -20,8 +20,16 @@ import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
 import { deliverDueReminders } from '../core/notifications.js';
 import { CompanionController } from './companion.js';
+import { placeWritingBubble } from '../core/popover.js';
 import { CalendarSync, type CalendarConnection } from '../core/calendar-sync.js';
-import type { NoteDraft, JournalDraft, ReminderDraft, Settings } from '../shared/contracts.js';
+import type {
+  NoteDraft,
+  JournalDraft,
+  ReminderDraft,
+  Settings,
+  NotebookLaunch,
+  NotebookAction,
+} from '../shared/contracts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const testMode = process.env.BUDDY_TEST === '1';
@@ -32,15 +40,25 @@ app.setAppUserModelId('com.researchbuddy.desktop');
 let workspace: BrowserWindow | undefined,
   companion: CompanionController | undefined,
   notepad: BrowserWindow | undefined,
+  writingBubble: BrowserWindow | undefined,
   foxSettings: BrowserWindow | undefined,
   calendar: CalendarSync | undefined,
   tray: Tray | undefined,
   db: BuddyStore,
   quitting = false;
-let notepadReady: Promise<void> | undefined, settingsReady: Promise<void> | undefined;
+let notepadReady: Promise<void> | undefined,
+  settingsReady: Promise<void> | undefined,
+  bubbleReady: Promise<void> | undefined;
+let bubbleLayout = {
+  tailX: 180,
+  tailSide: 'bottom' as 'top' | 'bottom',
+  action: 'notes' as 'notes' | 'reminder' | 'calendar',
+};
+let notebookLaunch: NotebookLaunch = { action: 'notes' };
 const notices = new Set<Notification>();
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
+  if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('buddy:changed');
 }
 function showWorkspace() {
@@ -70,7 +88,22 @@ function baseWindow(options: Electron.BrowserWindowConstructorOptions) {
 function load(win: BrowserWindow, hash = '') {
   return win.loadFile(join(here, '../../dist/index.html'), { hash });
 }
-async function showNotepad(action: 'notes' | 'reminder' = 'notes') {
+async function showNotepad(
+  action: 'notes' | 'reminder' | 'calendar' = 'notes',
+  noteId?: string,
+  reminderId?: string,
+) {
+  const snapshot = db.snapshot();
+  const note = snapshot.notes.find((n) => n.id === noteId),
+    reminder = snapshot.reminders.find((r) => r.id === reminderId);
+  notebookLaunch = {
+    action,
+    item: note
+      ? { kind: 'note', note }
+      : reminder
+        ? { kind: action === 'calendar' ? 'calendar' : 'reminder', reminder }
+        : undefined,
+  };
   if (!notepad || notepad.isDestroyed()) {
     notepad = baseWindow({
       width: 520,
@@ -94,17 +127,23 @@ async function showNotepad(action: 'notes' | 'reminder' = 'notes') {
   notepad.show();
   notepad.focus();
   notepad.webContents.send('buddy:navigate', action);
+  if (notebookLaunch.item) notepad.webContents.send('buddy:open-item', notebookLaunch.item);
 }
 async function showFoxSettings() {
   if (!foxSettings || foxSettings.isDestroyed()) {
     foxSettings = baseWindow({
-      width: 400,
-      height: 590,
-      minWidth: 360,
-      minHeight: 480,
+      width: 340,
+      height: 400,
+      resizable: false,
+      frame: false,
+      thickFrame: false,
+      transparent: true,
+      hasShadow: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
       show: false,
       title: 'Fox settings',
-      backgroundColor: '#fbfaf6',
+      backgroundColor: '#00000000',
     });
     foxSettings.setMenuBarVisibility(false);
     foxSettings.on('close', (event) => {
@@ -119,8 +158,51 @@ async function showFoxSettings() {
   foxSettings.show();
   foxSettings.focus();
 }
-function openNotepad(action: 'notes' | 'reminder' | 'settings' = 'notes') {
-  void (action === 'settings' ? showFoxSettings() : showNotepad(action)).catch(() =>
+async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
+  bubbleLayout = { ...bubbleLayout, action };
+  if (!db.settings().petVisible) companion?.show();
+  if (!writingBubble || writingBubble.isDestroyed()) {
+    writingBubble = baseWindow({
+      width: 360,
+      height: 340,
+      show: false,
+      frame: false,
+      thickFrame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: false,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      skipTaskbar: true,
+      alwaysOnTop: db.settings().alwaysOnTop,
+      title: 'Pip quick note',
+    });
+    writingBubble.setMenuBarVisibility(false);
+    writingBubble.on('close', (event) => {
+      if (!quitting) {
+        event.preventDefault();
+        writingBubble?.hide();
+      }
+    });
+    writingBubble.on('hide', () => companion?.setEngaged(false));
+    bubbleReady = load(writingBubble, 'bubble');
+  }
+  await bubbleReady;
+  const pet = companion?.window?.getBounds() ?? { x: 0, y: 0, width: 240, height: 260 };
+  const area = screen.getDisplayMatching(pet).workArea;
+  const placement = placeWritingBubble(pet, area, writingBubble.getBounds());
+  bubbleLayout = { tailX: placement.tailX, tailSide: placement.tailSide, action };
+  writingBubble.setBounds({ x: placement.x, y: placement.y, width: 360, height: 340 });
+  writingBubble.setAlwaysOnTop(db.settings().alwaysOnTop);
+  companion?.setEngaged(true);
+  writingBubble.show();
+  writingBubble.focus();
+  writingBubble.webContents.send('buddy:navigate', action);
+  changed();
+}
+function openNotepad(action: NotebookAction = 'notes') {
+  void (action === 'settings' ? showFoxSettings() : showBubble(action)).catch(() =>
     dialog.showErrorBox('Pip could not open', 'Please restart Research Buddy and try again.'),
   );
 }
@@ -255,7 +337,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
   if (
     !sender ||
-    ![workspace, companion?.window, notepad, foxSettings].includes(sender) ||
+    ![workspace, companion?.window, notepad, foxSettings, writingBubble].includes(sender) ||
     event.senderFrame !== event.sender.mainFrame
   )
     return { ok: false, error: 'This action is not available.' };
@@ -415,8 +497,40 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         await calendar?.sync();
         value = calendar?.status;
         break;
+      case 'showBubble':
+        await showBubble(
+          data.action === 'calendar'
+            ? 'calendar'
+            : data.action === 'reminder'
+              ? 'reminder'
+              : 'notes',
+        );
+        value = true;
+        break;
+      case 'hideBubble':
+        writingBubble?.hide();
+        value = true;
+        break;
+      case 'hideFoxSettings':
+        foxSettings?.hide();
+        value = true;
+        break;
+      case 'bubbleLayout':
+        value = bubbleLayout;
+        break;
+      case 'getNotebookLaunch':
+        value = notebookLaunch;
+        break;
       case 'showNotepad':
-        await showNotepad(data.action === 'reminder' ? 'reminder' : 'notes');
+        await showNotepad(
+          data.action === 'calendar'
+            ? 'calendar'
+            : data.action === 'reminder'
+              ? 'reminder'
+              : 'notes',
+          typeof data.noteId === 'string' ? data.noteId : undefined,
+          typeof data.reminderId === 'string' ? data.reminderId : undefined,
+        );
         value = true;
         break;
       case 'showFoxSettings':
@@ -491,6 +605,8 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         'revision',
         'calendarPreview',
         'calendarStatus',
+        'bubbleLayout',
+        'getNotebookLaunch',
         'importFile',
         'petState',
         'petRegions',

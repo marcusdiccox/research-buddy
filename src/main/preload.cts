@@ -18,6 +18,11 @@ const actions = new Set([
   'settings',
   'showWorkspace',
   'showNotepad',
+  'showBubble',
+  'hideBubble',
+  'bubbleLayout',
+  'getNotebookLaunch',
+  'hideFoxSettings',
   'showFoxSettings',
   'calendarStatus',
   'calendarConfigure',
@@ -56,5 +61,10 @@ contextBridge.exposeInMainWorld('buddy', {
     const listener = (_event: unknown, action: unknown) => handler(action);
     ipcRenderer.on('buddy:navigate', listener);
     return () => ipcRenderer.removeListener('buddy:navigate', listener);
+  },
+  onOpenItem(handler: (item: unknown) => void) {
+    const listener = (_event: unknown, item: unknown) => handler(item);
+    ipcRenderer.on('buddy:open-item', listener);
+    return () => ipcRenderer.removeListener('buddy:open-item', listener);
   },
 });

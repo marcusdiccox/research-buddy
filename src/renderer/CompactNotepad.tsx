@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { BookOpen, Bell, CalendarDays, Settings, Plus, ArrowUpRight, Save } from 'lucide-react';
-import type { CalendarStatus, Note, Reminder, Snapshot } from '../shared/contracts';
+import type {
+  CalendarStatus,
+  Note,
+  Reminder,
+  Snapshot,
+  NotebookItem,
+  NotebookLaunch,
+} from '../shared/contracts';
 import './compact.css';
 
 type Mode = 'notes' | 'reminders' | 'calendar';
@@ -54,6 +61,20 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
   const noteDrafts = useRef(new Map<string, NoteFields>());
   const reminderDrafts = useRef(new Map<string, ReminderFields>());
   const busyRef = useRef(false);
+  const dirtyNotes = useRef(new Set<string>()),
+    dirtyReminders = useRef(new Set<string>());
+  const noteRef = useRef(note),
+    reminderRef = useRef(reminder);
+  noteRef.current = note;
+  reminderRef.current = reminder;
+  function editNote(next: NoteFields) {
+    dirtyNotes.current.add(next.id ?? '');
+    setNote(next);
+  }
+  function editReminder(next: ReminderFields) {
+    dirtyReminders.current.add(next.id ?? '');
+    setReminder(next);
+  }
   const refresh = useCallback(async () => {
     if (!window.buddy) throw new Error('Open Pip’s notebook from the desktop app.');
     const snapshot = await window.buddy.call<Snapshot>('snapshot');
@@ -73,7 +94,10 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
           void window
             .buddy!.call('showFoxSettings')
             .catch((error) => setMessage({ text: errorMessage(error), error: true }));
-        } else setMode(action === 'reminder' ? 'reminders' : 'notes');
+        } else
+          setMode(
+            action === 'calendar' ? 'calendar' : action === 'reminder' ? 'reminders' : 'notes',
+          );
       }),
     [],
   );
@@ -84,6 +108,67 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
       .then(setCalendar)
       .catch((error) => setMessage({ text: errorMessage(error), error: true }));
   }, [mode]);
+
+  useEffect(() => {
+    const openItem = (item: NotebookItem) => {
+      if (item.kind === 'note') {
+        const draft =
+          noteRef.current.id === item.note.id
+            ? noteRef.current
+            : noteDrafts.current.get(item.note.id);
+        if (dirtyNotes.current.has(item.note.id) && draft) {
+          setNote(draft);
+          setMode('notes');
+          setMessage({ text: 'Unsaved draft kept.' });
+          return;
+        }
+        setNote((old) => {
+          noteDrafts.current.set(old.id ?? '', old);
+          return { ...item.note };
+        });
+        setMode('notes');
+      } else {
+        const r = item.reminder;
+        const draft =
+          reminderRef.current.id === r.id ? reminderRef.current : reminderDrafts.current.get(r.id);
+        if (dirtyReminders.current.has(r.id) && draft) {
+          setReminder(draft);
+          setMode(item.kind === 'calendar' ? 'calendar' : 'reminders');
+          setMessage({ text: 'Unsaved draft kept.' });
+          return;
+        }
+        setReminder((old) => {
+          reminderDrafts.current.set(old.id ?? '', old);
+          return {
+            id: r.id,
+            projectId: r.projectId,
+            title: r.title,
+            details: r.details,
+            dateTime: localDate(r.dueAt),
+            durationMinutes: r.durationMinutes,
+            calendarSync: !!r.calendarSync,
+          };
+        });
+        setMode(item.kind === 'calendar' ? 'calendar' : 'reminders');
+      }
+    };
+    const unsub = window.buddy?.onOpenItem(openItem);
+    void window.buddy
+      ?.call<NotebookLaunch>('getNotebookLaunch')
+      .then((launch) => {
+        if (launch.item) openItem(launch.item);
+        else
+          setMode(
+            launch.action === 'calendar'
+              ? 'calendar'
+              : launch.action === 'reminder'
+                ? 'reminders'
+                : 'notes',
+          );
+      })
+      .catch((error) => setMessage({ text: errorMessage(error), error: true }));
+    return () => unsub?.();
+  }, []);
 
   async function run<T>(
     action: string,
@@ -123,13 +208,16 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
   function selectNote(id: string) {
     noteDrafts.current.set(note.id ?? '', note);
     const saved = data?.notes.find((item) => item.id === id);
-    setNote(noteDrafts.current.get(id) ?? (saved ? { ...saved } : blankNote()));
+    setNote(
+      (dirtyNotes.current.has(id) ? noteDrafts.current.get(id) : undefined) ??
+        (saved ? { ...saved } : blankNote()),
+    );
   }
   function selectReminder(id: string) {
     reminderDrafts.current.set(reminder.id ?? '', reminder);
     const saved = data?.reminders.find((item) => item.id === id);
     setReminder(
-      reminderDrafts.current.get(id) ??
+      (dirtyReminders.current.has(id) ? reminderDrafts.current.get(id) : undefined) ??
         (saved
           ? {
               id: saved.id,
@@ -151,6 +239,8 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
       'Note saved.',
     );
     if (saved) {
+      dirtyNotes.current.delete(note.id ?? '');
+      dirtyNotes.current.delete(saved.id);
       setNote({ ...saved });
       noteDrafts.current.set(saved.id, { ...saved });
       if (!note.id) noteDrafts.current.delete('');
@@ -178,6 +268,8 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
         durationMinutes: saved.durationMinutes,
         calendarSync: !!saved.calendarSync,
       };
+      dirtyReminders.current.delete(reminder.id ?? '');
+      dirtyReminders.current.delete(saved.id);
       setReminder(next);
       reminderDrafts.current.set(saved.id, next);
       if (!reminder.id) reminderDrafts.current.delete('');
@@ -304,7 +396,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                     Workspace
                     <select
                       value={note.projectId || data.projects[0]?.id}
-                      onChange={(event) => setNote({ ...note, projectId: event.target.value })}
+                      onChange={(event) => editNote({ ...note, projectId: event.target.value })}
                     >
                       {data.projects.map((project) => (
                         <option key={project.id} value={project.id}>
@@ -322,7 +414,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                     maxLength={200}
                     placeholder="A little thought…"
                     value={note.title}
-                    onChange={(event) => setNote({ ...note, title: event.target.value })}
+                    onChange={(event) => editNote({ ...note, title: event.target.value })}
                   />
                 </label>
                 <label className="compact-note-body">
@@ -332,7 +424,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                     required
                     placeholder="Write anything here."
                     value={note.body}
-                    onChange={(event) => setNote({ ...note, body: event.target.value })}
+                    onChange={(event) => editNote({ ...note, body: event.target.value })}
                   />
                 </label>
                 <div className="compact-save-row">
@@ -505,7 +597,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                       maxLength={200}
                       placeholder="What would you like to remember?"
                       value={reminder.title}
-                      onChange={(event) => setReminder({ ...reminder, title: event.target.value })}
+                      onChange={(event) => editReminder({ ...reminder, title: event.target.value })}
                     />
                   </label>
                   <label>
@@ -515,7 +607,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                       rows={3}
                       value={reminder.details}
                       onChange={(event) =>
-                        setReminder({ ...reminder, details: event.target.value })
+                        editReminder({ ...reminder, details: event.target.value })
                       }
                     />
                   </label>
@@ -528,7 +620,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                         required
                         value={reminder.dateTime}
                         onChange={(event) =>
-                          setReminder({ ...reminder, dateTime: event.target.value })
+                          editReminder({ ...reminder, dateTime: event.target.value })
                         }
                       />
                     </label>
@@ -542,7 +634,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                         max={1440}
                         value={reminder.durationMinutes}
                         onChange={(event) =>
-                          setReminder({ ...reminder, durationMinutes: Number(event.target.value) })
+                          editReminder({ ...reminder, durationMinutes: Number(event.target.value) })
                         }
                       />
                     </label>
@@ -552,7 +644,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                       type="checkbox"
                       checked={reminder.calendarSync}
                       onChange={(event) =>
-                        setReminder({ ...reminder, calendarSync: event.target.checked })
+                        editReminder({ ...reminder, calendarSync: event.target.checked })
                       }
                     />
                     Sync this reminder to Google Calendar

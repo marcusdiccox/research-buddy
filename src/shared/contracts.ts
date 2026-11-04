@@ -127,7 +127,13 @@ export interface HitRegion {
   height: number;
   shape: 'rect' | 'ellipse';
 }
-export type NotebookAction = 'notes' | 'reminder' | 'settings';
+export type NotebookAction = 'notes' | 'reminder' | 'calendar' | 'settings';
+export type NotebookItem =
+  { kind: 'note'; note: Note } | { kind: 'reminder' | 'calendar'; reminder: Reminder };
+export interface NotebookLaunch {
+  action: 'notes' | 'reminder' | 'calendar';
+  item?: NotebookItem;
+}
 export interface NoteDraft {
   id?: string;
   projectId: string;
@@ -158,6 +164,7 @@ export interface BuddyAPI {
   onChange(handler: () => void): () => void;
   onPetState(handler: (state: PetView) => void): () => void;
   onNavigate(handler: (action: NotebookAction) => void): () => void;
+  onOpenItem(handler: (item: NotebookItem) => void): () => void;
 }
 declare global {
   interface Window {

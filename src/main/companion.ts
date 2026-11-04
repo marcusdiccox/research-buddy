@@ -26,6 +26,7 @@ export class CompanionController {
   private visible: boolean;
   private disposed = false;
   private menuOpen = false;
+  private engaged = false;
   private systemReduced = false;
   private regions: HitRegion[] = [{ x: 80, y: 172, width: 80, height: 80, shape: 'ellipse' }];
   private ignoring = true;
@@ -95,6 +96,7 @@ export class CompanionController {
       x: Math.round(position.x),
       y: Math.round(position.y),
       frame: false,
+      thickFrame: false,
       transparent: true,
       backgroundColor: '#00000000',
       resizable: false,
@@ -164,7 +166,7 @@ export class CompanionController {
       const area = screen.getDisplayMatching(window.getBounds()).workArea;
       this.behavior.enter(area, window.getBounds(), Date.now(), this.systemReduced);
       const frame = this.behavior.snapshot();
-      window.setPosition(Math.round(frame.x), Math.round(frame.y));
+      window.setBounds({ x: Math.round(frame.x), y: Math.round(frame.y), ...petWindowSize });
     }
     window.showInactive();
     this.publish(true);
@@ -184,6 +186,10 @@ export class CompanionController {
   toggle() {
     if (this.visible) this.hide();
     else this.show(true);
+  }
+  setEngaged(active: boolean) {
+    this.engaged = active;
+    this.behavior.interact(Date.now());
   }
   private start() {
     if (this.timer) return;
@@ -214,7 +220,11 @@ export class CompanionController {
       this.window.getBounds(),
       screen.getAllDisplays().map((d) => d.workArea),
     );
-    this.window.setPosition(Math.round(position.x), Math.round(position.y));
+    this.window.setBounds({
+      x: Math.round(position.x),
+      y: Math.round(position.y),
+      ...petWindowSize,
+    });
     this.behavior.place(position);
     this.behavior.resume(Date.now());
     this.savePosition();
@@ -249,19 +259,19 @@ export class CompanionController {
         bounds,
         screen.getAllDisplays().map((d) => d.workArea),
       );
-      window.setPosition(Math.round(position.x), Math.round(position.y));
+      window.setBounds({ x: Math.round(position.x), y: Math.round(position.y), ...petWindowSize });
       this.behavior.place(position);
     }
     const prior = this.behavior.snapshot();
     const frame = this.behavior.tick(now, elapsed, area, bounds, {
       visible: true,
       hovered,
-      menuOpen: this.menuOpen,
+      menuOpen: this.menuOpen || this.engaged,
       dragging: !!this.drag,
       reducedMotion: this.systemReduced,
     });
     if (!this.drag && (Math.round(frame.x) !== bounds.x || Math.round(frame.y) !== bounds.y))
-      window.setPosition(Math.round(frame.x), Math.round(frame.y));
+      window.setBounds({ x: Math.round(frame.x), y: Math.round(frame.y), ...petWindowSize });
     if (prior.pose === 'walking' && frame.pose !== 'walking') this.savePosition();
     this.publish();
   }

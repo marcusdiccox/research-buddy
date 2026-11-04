@@ -76,13 +76,13 @@ test('fox settings change live and reduced motion turns off animation', async ()
     )
     .toBeTruthy();
   const settingsPage = app.windows().find((p) => p.url().endsWith('#fox-settings'))!;
-  await settingsPage.getByLabel('Fox appearance').selectOption('arctic');
+  await settingsPage.getByLabel('Appearance').selectOption('arctic');
   await expect(pet.locator('.fox')).toHaveAttribute('data-appearance', 'arctic');
-  await settingsPage.getByLabel('Where Pip roams').selectOption('parked');
-  await settingsPage.getByLabel('Joke style').selectOption('nerdy');
+  await settingsPage.getByLabel('Roaming').selectOption('parked');
+  await settingsPage.getByLabel('Jokes').selectOption('nerdy');
   await expect(settingsPage.getByLabel('How often Pip chats')).toHaveCount(0);
-  await settingsPage.getByLabel('Reduce motion').click();
-  await expect(settingsPage.getByLabel('Reduce motion')).toBeChecked();
+  await settingsPage.getByLabel('Reduced motion').click();
+  await expect(settingsPage.getByLabel('Reduced motion')).toBeChecked();
   await expect(pet.locator('.desktop-fox')).toHaveClass(/motion-reduced/);
   expect(await pet.locator('.fox-sprite').evaluate((e) => getComputedStyle(e).animationName)).toBe(
     'none',
@@ -94,9 +94,9 @@ test('fox settings change live and reduced motion turns off animation', async ()
     petJokeStyle: 'nerdy',
     petReducedMotion: true,
   });
-  await settingsPage.getByLabel('Fox appearance').selectOption('midnight');
+  await settingsPage.getByLabel('Appearance').selectOption('midnight');
   await expect(pet.locator('.fox')).toHaveAttribute('data-appearance', 'midnight');
-  await settingsPage.getByLabel('Show / hide shortcut').selectOption('Control+Shift+Space');
+  await settingsPage.getByLabel('Shortcut').selectOption('Control+Shift+Space');
   await expect(pet.getByRole('button', { name: 'Pip the fox — open notepad' })).toHaveAttribute(
     'title',
     /Ctrl \+ Shift \+ Space/,
@@ -120,7 +120,7 @@ test('fox settings change live and reduced motion turns off animation', async ()
   await expect(pet.locator('.fox')).toHaveAttribute('data-appearance', 'midnight');
   await expect(pet.locator('.desktop-fox')).toHaveClass(/motion-reduced/);
 });
-test('the shared shortcut toggles Pip and primary click opens the small notepad', async () => {
+test('the shared shortcut toggles Pip and primary click opens the writing bubble', async () => {
   await notebook.evaluate(() => window.buddy!.call('togglePet'));
   expect(
     (await notebook.evaluate(() => window.buddy!.call<any>('snapshot'))).settings.petVisible,
@@ -131,11 +131,11 @@ test('the shared shortcut toggles Pip and primary click opens the small notepad'
     .poll(() =>
       app
         .windows()
-        .find((p) => p.url().endsWith('#notepad'))
+        .find((p) => p.url().endsWith('#bubble'))
         ?.url(),
     )
     .toBeTruthy();
-  const notes = app.windows().find((p) => p.url().endsWith('#notepad'))!;
+  const notes = app.windows().find((p) => p.url().endsWith('#bubble'))!;
   await expect(notes.getByRole('tab', { name: 'Notes', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
@@ -143,7 +143,7 @@ test('the shared shortcut toggles Pip and primary click opens the small notepad'
   await pet.getByRole('button', { name: 'Pip the fox — open notepad' }).click({ button: 'right' });
   await expect(pet.getByRole('menuitem', { name: /joke/i })).toHaveCount(0);
   await pet.getByRole('menuitem', { name: 'New reminder' }).click();
-  await expect(notes.getByRole('tab', { name: 'Reminders', exact: true })).toHaveAttribute(
+  await expect(notes.getByRole('tab', { name: 'Reminder', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
@@ -177,6 +177,9 @@ test('hiding Pip saves the current settled position', async () => {
   expect(data.settings).toMatchObject({ petX: 80, petY: 120 });
 });
 test('shortcut restoration walks Pip onto the display at a clickable pace', async () => {
+  await app.evaluate(({ screen }) => {
+    screen.getCursorScreenPoint = () => ({ x: 0, y: 0 });
+  });
   await notebook.evaluate(() => window.buddy!.call('hidePet'));
   await notebook.evaluate(() => window.buddy!.call('togglePet'));
   const position = () =>
@@ -202,6 +205,7 @@ test('shortcut restoration walks Pip onto the display at a clickable pace', asyn
       { timeout: 12000 },
     )
     .toBe(true);
+  expect(Math.abs((await position()).width-start.width)).toBeLessThanOrEqual(2);
 });
 test('the fox paints while unfocused and re-enables background throttling when hidden', async () => {
   const throttled = () =>

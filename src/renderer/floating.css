@@ -1,0 +1,289 @@
+html.floating-mode,
+html.floating-mode body,
+html.floating-mode #root {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+.quick-bubble,
+.floating-settings {
+  height: 100%;
+  padding: 8px;
+  color: #34473c;
+  font-size: 12px;
+}
+.quick-bubble {
+  position: relative;
+  padding-bottom: 20px;
+}
+.quick-bubble.tail-top {
+  padding-top: 20px;
+  padding-bottom: 8px;
+}
+.floating-card {
+  height: 100%;
+  border: 1px solid #d9dece;
+  border-radius: 19px;
+  background: #fffef8;
+  box-shadow: 0 2px 7px #1d362520;
+}
+.bubble-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 11px;
+}
+.quick-bubble::after {
+  content: '';
+  position: absolute;
+  left: clamp(28px, var(--tail-x, 180px), calc(100% - 28px));
+  bottom: 12px;
+  width: 15px;
+  height: 15px;
+  background: #fffef8;
+  border-right: 1px solid #d9dece;
+  border-bottom: 1px solid #d9dece;
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+.quick-bubble.tail-top::after {
+  top: 12px;
+  bottom: auto;
+  transform: translateX(-50%) rotate(225deg);
+}
+.floating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 26px;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.floating-header h1 {
+  margin: 0;
+  font:
+    600 14px 'Segoe UI',
+    sans-serif;
+  letter-spacing: 0;
+}
+.bubble-caption {
+  padding-left: 3px;
+  color: #65725c;
+  font-size: 11px;
+}
+.floating-header-actions {
+  display: flex;
+  gap: 2px;
+}
+.floating-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 8px;
+}
+.floating-icon:hover {
+  background: #edf0e5;
+}
+.floating-card button,
+.floating-card input,
+.floating-card select,
+.floating-card textarea {
+  -webkit-app-region: no-drag;
+}
+.floating-card label,
+.floating-card input,
+.floating-card select,
+.floating-card textarea {
+  margin: 0;
+}
+.floating-card :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid #78977b;
+  outline-offset: 2px;
+}
+.bubble-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 7px 0 9px;
+  flex-shrink: 0;
+}
+.bubble-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 8px;
+  flex: 1;
+  border-radius: 9px;
+  color: #65725c;
+  font-size: 11px;
+}
+.bubble-tabs button[aria-selected='true'] {
+  color: #355b43;
+  background: #eaf0df;
+  font-weight: 600;
+}
+.bubble-tabs button:hover {
+  background: #f0f2e8;
+}
+.bubble-form {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.bubble-editor {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+.bubble-editor textarea {
+  display: block;
+  flex: 1;
+  min-height: 44px;
+  width: 100%;
+  resize: none;
+  padding: 10px;
+  border: 1px solid #e1e4d7;
+  border-radius: 11px;
+  background: #fafbf4;
+  color: #34473c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.bubble-editor textarea::placeholder {
+  color: #69755e;
+}
+.bubble-date {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #65725c;
+  font-size: 11px;
+}
+.bubble-date input[type='datetime-local'] {
+  min-width: 0;
+  min-height: 29px;
+  flex: 1;
+  height: 29px;
+  border: 1px solid #e1e4d7;
+  border-radius: 7px;
+  padding: 3px 6px;
+  color: #425b49;
+  background: #fafbf4;
+  font-size: 11px;
+  color-scheme: light;
+}
+.bubble-calendar-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 10px;
+  color: #65725c;
+}
+.bubble-calendar-status button {
+  padding: 3px 0;
+  color: #476a4d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.floating-status {
+  min-height: 17px;
+  margin: 5px 0 3px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #617452;
+  overflow-wrap: anywhere;
+}
+.floating-status.is-error {
+  color: #a04f3b;
+}
+.bubble-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.bubble-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+  font-size: 11px;
+  color: #65725c;
+}
+.bubble-expand:hover {
+  color: #365e4f;
+}
+.bubble-save {
+  min-width: 64px;
+  padding: 7px 13px;
+  color: #fffef8;
+  border-radius: 9px;
+  background: #4d7154;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bubble-save:hover {
+  background: #3c5f43;
+}
+.settings-popup {
+  padding: 11px 14px 8px;
+  display: flex;
+  flex-direction: column;
+}
+.popup-settings-fields {
+  border: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.popup-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  gap: 8px;
+  font-size: 12px;
+}
+.popup-setting select {
+  width: 164px;
+  min-width: 0;
+  padding: 6px 5px;
+  border: 1px solid #dfe4d5;
+  border-radius: 8px;
+  color: #425b49;
+  background: #f7f9f0;
+  font-size: 11px;
+}
+.popup-toggle {
+  min-height: 28px;
+}
+.popup-toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0 2px 0 0;
+  accent-color: #557a57;
+}
+.settings-popup .floating-status {
+  margin-top: auto;
+  padding-top: 6px;
+}
+.settings-loading {
+  font-size: 12px;
+  color: #65725c;
+}

@@ -69,6 +69,7 @@ test('notes persist and an unsaved draft survives switching modes and navigation
     'Unsaved thought stays here.',
   );
   await notepad.reload();
+  await notepad.getByRole('tab', { name: 'Notes', exact: true }).click();
   await notepad.getByLabel('Saved notes').selectOption({ label: 'Small notebook' });
   await expect(notepad.getByLabel('Note text', { exact: true })).toHaveValue(
     'A real persisted note.',
@@ -149,10 +150,10 @@ test('settings open separately with working fox controls and fit their compact w
     )!;
     return { size: win.getSize(), minimum: win.getMinimumSize() };
   });
-  expect(Math.abs(geometry.size[0] - 400)).toBeLessThanOrEqual(2);
-  expect(Math.abs(geometry.size[1] - 590)).toBeLessThanOrEqual(2);
-  expect(geometry.minimum).toEqual([360, 480]);
-  await settings.getByLabel('Fox appearance').selectOption('arctic');
+  expect(Math.abs(geometry.size[0] - 340)).toBeLessThanOrEqual(2);
+  expect(Math.abs(geometry.size[1] - 400)).toBeLessThanOrEqual(2);
+
+  await settings.getByLabel('Appearance').selectOption('arctic');
   await expect
     .poll(
       async () =>
@@ -161,12 +162,7 @@ test('settings open separately with working fox controls and fit their compact w
     .toBe('arctic');
   await expect(settings.getByLabel('How often Pip chats')).toHaveCount(0);
   await expect(settings.locator('.sidebar')).toHaveCount(0);
-  expect(
-    await settings
-      .locator('.setting-toggle')
-      .first()
-      .evaluate((element) => getComputedStyle(element).flexDirection),
-  ).toBe('row');
+  await expect(settings.locator('.fox-settings-preview,.fox-choice-description')).toHaveCount(0);
   expect(await settings.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
     true,
   );
