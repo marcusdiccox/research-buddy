@@ -62,6 +62,11 @@ contextBridge.exposeInMainWorld('buddy', {
     ipcRenderer.on('buddy:navigate', listener);
     return () => ipcRenderer.removeListener('buddy:navigate', listener);
   },
+  onReminder(handler: (message: string) => void) {
+    const listener = (_event: unknown, message: string) => handler(message);
+    ipcRenderer.on('buddy:reminder', listener);
+    return () => ipcRenderer.removeListener('buddy:reminder', listener);
+  },
   onOpenItem(handler: (item: unknown) => void) {
     const listener = (_event: unknown, item: unknown) => handler(item);
     ipcRenderer.on('buddy:open-item', listener);

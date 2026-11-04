@@ -27,6 +27,7 @@ type ReminderFields = {
   dateTime: string;
   durationMinutes: number;
   calendarSync: boolean;
+  remindEnabled: boolean;
 };
 const blankNote = (): NoteFields => ({ projectId: '', title: '', body: '' });
 function localDate(value = new Date(Date.now() + 3600000).toISOString()) {
@@ -39,6 +40,7 @@ const blankReminder = (): ReminderFields => ({
   dateTime: localDate(),
   durationMinutes: 30,
   calendarSync: false,
+  remindEnabled: true,
 });
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong. Please try again.';
@@ -56,6 +58,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
   const [reminder, setReminder] = useState<ReminderFields>(blankReminder);
   const [busy, setBusy] = useState('');
   const [cancellingConnection, setCancellingConnection] = useState(false);
+  const [reminderNotice, setReminderNotice] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   // Keep each note's typed contents when another note or mode is selected.
   const noteDrafts = useRef(new Map<string, NoteFields>());
@@ -147,6 +150,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
             dateTime: localDate(r.dueAt),
             durationMinutes: r.durationMinutes,
             calendarSync: !!r.calendarSync,
+            remindEnabled: r.remindEnabled !== false,
           };
         });
         setMode(item.kind === 'calendar' ? 'calendar' : 'reminders');
@@ -170,6 +174,21 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
     return () => unsub?.();
   }, []);
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsub = window.buddy?.onReminder((text) => {
+      if (timer) clearTimeout(timer);
+      setReminderNotice(text);
+      timer = setTimeout(
+        () => setReminderNotice((current) => (current === text ? null : current)),
+        12000,
+      );
+    });
+    return () => {
+      unsub?.();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
   async function run<T>(
     action: string,
     payload?: unknown,
@@ -227,6 +246,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
               dateTime: localDate(saved.dueAt),
               durationMinutes: saved.durationMinutes,
               calendarSync: !!saved.calendarSync,
+              remindEnabled: saved.remindEnabled !== false,
             }
           : blankReminder()),
     );
@@ -267,6 +287,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
         dateTime: localDate(saved.dueAt),
         durationMinutes: saved.durationMinutes,
         calendarSync: !!saved.calendarSync,
+        remindEnabled: saved.remindEnabled !== false,
       };
       dirtyReminders.current.delete(reminder.id ?? '');
       dirtyReminders.current.delete(saved.id);
@@ -282,7 +303,8 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
     savedReminder.details !== reminder.details ||
     localDate(savedReminder.dueAt) !== reminder.dateTime ||
     savedReminder.durationMinutes !== reminder.durationMinutes ||
-    !!savedReminder.calendarSync !== reminder.calendarSync;
+    !!savedReminder.calendarSync !== reminder.calendarSync ||
+    (savedReminder.remindEnabled !== false) !== reminder.remindEnabled;
 
   return (
     <main className="compact-shell">
@@ -335,12 +357,12 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
           </button>
         ))}
       </nav>
-      {message && (
+      {(message || reminderNotice) && (
         <p
-          className={`compact-message ${message.error ? 'is-error' : ''}`}
-          role={message.error ? 'alert' : 'status'}
+          className={`compact-message ${message?.error ? 'is-error' : ''}`}
+          role={message?.error || reminderNotice ? 'alert' : 'status'}
         >
-          {message.text}
+          {message?.error ? message.text : (reminderNotice ?? message?.text)}
         </p>
       )}
       {!data ? (
@@ -639,6 +661,16 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                       />
                     </label>
                   </div>
+                  <label className="compact-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={reminder.remindEnabled}
+                      onChange={(event) =>
+                        editReminder({ ...reminder, remindEnabled: event.target.checked })
+                      }
+                    />
+                    Remind me
+                  </label>
                   <label className="compact-checkbox">
                     <input
                       type="checkbox"

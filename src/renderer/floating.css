@@ -287,3 +287,23 @@ html.floating-mode #root {
   font-size: 12px;
   color: #65725c;
 }
+
+.floating-icon[aria-pressed='true'] {
+  background: #e4eddc;
+  color: #355b43;
+}
+.bubble-remind {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #52664d;
+  font-size: 11px;
+  min-height: 18px;
+}
+.bubble-remind input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  min-height: 0;
+  margin: 0;
+  accent-color: #4d7154;
+}

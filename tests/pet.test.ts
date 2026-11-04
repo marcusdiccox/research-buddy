@@ -95,7 +95,7 @@ describe('fox movement and chatter', () => {
       { ...defaultPetPreferences, petRoamArea: 'desktop' },
       { x: -700, y: 500 },
       0,
-      () => 0.5,
+      () => 0.3,
     );
     const ys = new Set<number>();
     for (let t = 0; t < 90000; t += 100) {
@@ -139,6 +139,116 @@ describe('fox movement and chatter', () => {
     expect(Math.abs(slow)).toBeCloseTo(2.4, 6);
     expect(Math.abs(fast)).toBeLessThanOrEqual(4.8);
     expect(Math.abs(fast)).toBeGreaterThan(Math.abs(slow));
+  });
+  it('steers away from nearby edges on negative-coordinate work areas', () => {
+    const desktop = { x: -1600, y: -900, width: 1600, height: 900 };
+    for (const mode of ['bottom', 'desktop'] as const) {
+      for (const side of ['left', 'right'] as const) {
+        const start = { x: side === 'left' ? -1570 : -270, y: -272 };
+        const pet = new PetBehavior(
+          { ...defaultPetPreferences, petRoamArea: mode },
+          start,
+          0,
+          () => (side === 'left' ? 0 : 0.75),
+        );
+        pet.tick(7100, 100, desktop, size, {});
+        const frame = pet.tick(7900, 200, desktop, size, {});
+        expect(side === 'left' ? frame.x > start.x : frame.x < start.x).toBe(true);
+        expect(frame.x).toBeGreaterThanOrEqual(-1600);
+        expect(frame.x + size.width).toBeLessThanOrEqual(0);
+        expect(frame.y).toBeGreaterThanOrEqual(-900);
+        expect(frame.y + size.height).toBeLessThanOrEqual(0);
+      }
+    }
+  });
+  it('chooses very short and long actual bottom trips at slow clickable speeds', () => {
+    const desktop = { x: 0, y: 0, width: 1600, height: 900 };
+    const trip = (random: number) => {
+      const pet = new PetBehavior(defaultPetPreferences, { x: 700, y: 628 }, 0, () => random);
+      let started = false;
+      let previous = pet.snapshot();
+      for (let now = 0; now < 18000; now += 100) {
+        const frame = pet.tick(now, 100, desktop, size, {});
+        expect(Math.abs(frame.x - previous.x)).toBeLessThanOrEqual(2.400001);
+        if (frame.pose === 'walking') started = true;
+        if (started && frame.pose === 'sitting-down') return Math.abs(frame.x - 700);
+        previous = frame;
+      }
+      throw new Error('Trip did not finish');
+    };
+    expect(trip(0)).toBeGreaterThanOrEqual(24);
+    expect(trip(0)).toBeLessThan(40);
+    expect(trip(0.99)).toBeGreaterThan(160);
+    expect(trip(0.99)).toBeLessThanOrEqual(180);
+  });
+  it('chooses desktop headings locally instead of aiming at the same screen location', () => {
+    const desktop = { x: 0, y: 0, width: 2000, height: 1400 };
+    const displacement = (start: { x: number; y: number }) => {
+      const pet = new PetBehavior(
+        { ...defaultPetPreferences, petRoamArea: 'desktop' },
+        start,
+        0,
+        () => 0.3,
+      );
+      pet.tick(7100, 100, desktop, size, {});
+      const frame = pet.tick(7900, 100, desktop, size, {});
+      return { x: frame.x - start.x, y: frame.y - start.y };
+    };
+    const first = displacement({ x: 500, y: 400 });
+    const second = displacement({ x: 1200, y: 700 });
+    expect(first.x).toBeCloseTo(second.x, 6);
+    expect(first.y).toBeCloseTo(second.y, 6);
+    expect(Math.abs(first.x)).toBeGreaterThan(0.1);
+    expect(Math.abs(first.y)).toBeGreaterThan(0.1);
+  });
+  it('exhausts at least thirty unique short lines per theme across pauses and settings changes', () => {
+    const pet = new PetBehavior(defaultPetPreferences, { x: 100, y: 100 }, 0, () => 0);
+    for (const theme of ['wholesome', 'dad', 'nerdy'] as const) {
+      pet.configure({ ...defaultPetPreferences, petJokeStyle: theme }, 0);
+      const seen = new Set<string>();
+      const poolSize = theme === 'dad' ? 33 : 32;
+      let previous = '';
+      for (let index = 0; index < poolSize; index++) {
+        const phrase = pet.tellJoke(index * 10000);
+        expect(seen.has(phrase)).toBe(false);
+        expect(phrase.length).toBeLessThanOrEqual(100);
+        seen.add(phrase);
+        previous = phrase;
+        pet.resume(index * 10000 + 1);
+        pet.configure({ ...defaultPetPreferences, petJokeStyle: 'dad' }, index * 10000 + 2);
+        pet.configure({ ...defaultPetPreferences, petJokeStyle: theme }, index * 10000 + 3);
+      }
+      expect(pet.tellJoke(poolSize * 10000)).not.toBe(previous);
+    }
+  });
+  it('wakes for a reminder and keeps its alert ahead of automatic chatter', () => {
+    const desktop = { x: 0, y: 0, width: 1600, height: 900 };
+    const pet = new PetBehavior(
+      { ...defaultPetPreferences, petRoamArea: 'parked' },
+      { x: 500, y: 628 },
+      0,
+      () => 0,
+    );
+    pet.tick(120000, 100, desktop, size, {});
+    pet.tick(121000, 100, desktop, size, {});
+    expect(pet.snapshot().pose).toBe('sleeping');
+    pet.announceReminder('Time to stretch your paws.', 122000);
+    expect(pet.snapshot().phrase).toBe('Time to stretch your paws.');
+    expect(pet.snapshot().pose).toBe('waking-up');
+    expect(pet.tick(123200, 100, desktop, size, {}).pose).toBe('waving');
+    expect(pet.tick(129999, 100, desktop, size, {}).phrase).toBe('Time to stretch your paws.');
+    expect(pet.tick(134100, 100, desktop, size, {}).phrase).toBeNull();
+  });
+  it('brings a reminder on-screen immediately instead of finishing a walk-on entrance', () => {
+    const desktop = { x: -1600, y: 0, width: 1600, height: 900 };
+    const pet = new PetBehavior(defaultPetPreferences, { x: -800, y: 628 }, 0, () => 0);
+    pet.enter(desktop, size, 0);
+    pet.announceReminder('Your reading break is due.', 100);
+    const frame = pet.tick(200, 100, desktop, size, {});
+    expect(frame.x).toBeGreaterThanOrEqual(-1600);
+    expect(frame.x + size.width).toBeLessThanOrEqual(0);
+    expect(frame.phrase).toBe('Your reading break is due.');
+    expect(frame.pose).not.toBe('walking');
   });
   it('only captures clicks on actual pet or menu surfaces', () => {
     const regions = [

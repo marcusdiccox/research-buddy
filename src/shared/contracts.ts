@@ -49,6 +49,13 @@ export interface Reminder {
   notificationError?: boolean;
   createdAt: string;
   calendarSync?: boolean;
+  remindEnabled?: boolean;
+}
+export interface ReminderAlert {
+  reminder: Reminder;
+  offsetMinutes: 1440 | 360 | 120 | 60 | 30;
+  scheduledAt: string;
+  attemptAt: string;
 }
 export interface CalendarStatus {
   configured: boolean;
@@ -91,6 +98,7 @@ export interface Settings extends PetPreferences {
   petY?: number;
   notifications: boolean;
   providerConsent: boolean;
+  bubblePinned: boolean;
 }
 export interface Snapshot {
   projects: Project[];
@@ -150,6 +158,7 @@ export interface ReminderDraft {
   dueAt: string;
   durationMinutes: number;
   calendarSync?: boolean;
+  remindEnabled?: boolean;
 }
 export interface JournalDraft {
   entryId?: string;
@@ -165,6 +174,7 @@ export interface BuddyAPI {
   onPetState(handler: (state: PetView) => void): () => void;
   onNavigate(handler: (action: NotebookAction) => void): () => void;
   onOpenItem(handler: (item: NotebookItem) => void): () => void;
+  onReminder(handler: (message: string) => void): () => void;
 }
 declare global {
   interface Window {

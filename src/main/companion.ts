@@ -25,6 +25,30 @@ export class CompanionController {
   private lastView = '';
   private visible: boolean;
   private disposed = false;
+  private reminderUntil = 0;
+  private reminderQueue: {
+    key: string;
+    message: () => string | null;
+    shown: (() => void)[];
+    failed: (() => void)[];
+  }[] = [];
+  get canRemind() {
+    return this.visible && !!this.window && !this.window.isDestroyed() && this.window.isVisible();
+  }
+  remind(
+    key: string,
+    message: () => string | null,
+    shown: () => void,
+    failed: () => void,
+  ): boolean {
+    if (!this.canRemind) return false;
+    const existing = this.reminderQueue.find((item) => item.key === key);
+    if (existing) {
+      existing.shown.push(shown);
+      existing.failed.push(failed);
+    } else this.reminderQueue.push({ key, message, shown: [shown], failed: [failed] });
+    return true;
+  }
   private menuOpen = false;
   private engaged = false;
   private systemReduced = false;
@@ -199,6 +223,9 @@ export class CompanionController {
     this.timer.unref();
   }
   private stop() {
+    const pending = this.reminderQueue.splice(0);
+    for (const item of pending) for (const fail of item.failed) fail();
+    this.reminderUntil = 0;
     if (this.timer) clearInterval(this.timer);
     this.timer = undefined;
     if (this.window && !this.window.isDestroyed())
@@ -261,6 +288,16 @@ export class CompanionController {
       );
       window.setBounds({ x: Math.round(position.x), y: Math.round(position.y), ...petWindowSize });
       this.behavior.place(position);
+    }
+    if (!this.menuOpen && now >= this.reminderUntil && this.reminderQueue.length) {
+      const item = this.reminderQueue.shift()!;
+      const message = item.message();
+      if (message) {
+        this.behavior.announceReminder(message, now);
+        this.reminderUntil = now + 12000;
+        this.publish(true);
+        for (const shown of item.shown) shown();
+      } else for (const failed of item.failed) failed();
     }
     const prior = this.behavior.snapshot();
     const frame = this.behavior.tick(now, elapsed, area, bounds, {

@@ -1828,3 +1828,15 @@ summary {
 .toast {
   font-size: 13px;
 }
+
+.reminder-opt-in {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reminder-opt-in input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--green);
+}

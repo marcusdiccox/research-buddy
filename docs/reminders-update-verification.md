@@ -1,0 +1,13 @@
+# Reminders and roaming update 0.5
+
+Each reminder has one Remind me control. The fixed local checkpoints are 1 day, 6 hours, 2 hours, 1 hour and 30 minutes before its event. The SQLite checkpoint ledger survives restart, retries unsuccessful delivery and collapses missed checkpoints into one catch-up. Completed or disabled reminders are silent; date edits rearm the schedule while title edits preserve acknowledgements. A late-created reminder can receive one catch-up rather than replaying every earlier warning.
+
+Pip queues reminder speech, waits for its menu to close and revalidates the current event/checkpoint before speaking. The foreground notebook/editor has its own readable alert queue; saving does not overwrite the alert or the user's draft. Windows toasts are optional. Tests suppress actual OS notifications. Pip must remain running; local reminders cannot wake a powered-off computer. Google event reminders keep their separate calendar preferences.
+
+The floating bubble hides on native focus loss unless its pin is enabled. The pin persists and keeps the bubble above other apps. Drafts remain in the hidden editor. Actual trips vary from 25 to 180 pixels, with fresh headings, edge avoidance and a clickable 12–24px/s pace. Each of three phrase themes contains at least 30 original lines, with 97 total and a shuffled bag per theme.
+
+Source verification: TypeScript build, 65 backend tests and 31 Electron desktop journeys passed. Focused additional checks isolate foreground-only serialized alerts and Pip-only menu/cancelled-queue delivery. Review findings about overwritten simultaneous alerts and menu-covered speech were fixed and regression-tested. Animation checks compare native pixel buffers. Cropped PNG screenshots produced inconsistent edge pixels on this scaled Windows display despite a steady pose and disabled animation; native captures remained identical.
+
+The installer is generated with publishing disabled. All 4,743 packaged files passed their embedded SHA-256 integrity checks. Installer: `release-pip-reminders/Research Buddy Setup 0.5.0.exe` (128,201,567 bytes). SHA-256: `8D50C8B000B8AD2951F85471FB80FA2D9C0C8CB66FBD022C9C83BDA34053C0CE`.
+
+All 31 desktop journeys also passed against the packaged executable. The original database was backed up locally before replacing the running app. Version 0.5 was then launched normally on the user’s desktop: the small walking fox, transparent writing bubble, pin control and single Remind me switch were visually inspected. The updated app remains running. This remains an unsigned early Windows build tested on the development computer. Live Google sign-in still needs the user's Desktop OAuth registration; this update does not claim that account connection is complete.

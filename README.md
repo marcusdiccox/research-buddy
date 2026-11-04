@@ -2,17 +2,17 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · writing bubble update 0.4.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · reminders and roaming update 0.5.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
-![Pip’s floating writing bubble with fictional notes](docs/screenshots/writing-bubble.png)
+![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-Download the Windows installer from the [verified writing-bubble build](https://github.com/marcusdiccox/research-buddy/actions/runs/41909043594): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+Download the Windows installer from the latest successful run in [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
-For the local update, open **`release-pip-bubble/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+For the local update, open **`release-pip-reminders/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
-1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The gear opens minimal fox settings.
+1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
 3. Use **Ask my notes** to find relevant passages across the current workspace.
 4. Add a reminder, or record your thinking in **Thesis journal**.
@@ -29,7 +29,7 @@ Use the small notepad’s Settings button, or right-click Pip → **Fox settings
 - **Cute & wholesome**, **dad jokes & puns**, or **nerdy little jokes**.
 - Reduced motion and your preferred show/hide shortcut.
 
-Pip is smaller now: an 80px control, random left/right strolls at 12–24px/s, 3½–7s rests and 4–8s walks. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake, without a manual joke button. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
+Pip is smaller now: an 80px control, random 25–180px trips at 12–24px/s, with 3½–7s rests. It chooses a fresh direction each trip and turns away near the screen edges. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake. Its 97 lines are shuffled within each theme without repeats until the pool is exhausted. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
 
 ## What works
 
@@ -38,7 +38,7 @@ Pip is smaller now: an 80px control, random left/right strolls at 12–24px/s, 3
 - **Ask my notes:** finds matching passages inside the selected workspace and says when it finds no evidence. It does not invent an answer.
 - **Saved evidence:** editing a note preserves its earlier versions. Old summaries are marked as needing a fresh look when their source changes.
 - **Thesis journal:** record a thesis, counterarguments, and conditions that would change your mind. Revisions preserve all fields and attached evidence.
-- **Reminders:** save a date/time and duration, receive Windows notifications while the app is running, snooze for 15 minutes, complete, and reopen. Failed native delivery remains retryable with backoff.
+- **Reminders:** save a date/time and duration, with a single **Remind me** checkbox. Pip warns at **1 day, 6 hours, 2 hours, 1 hour, and 30 minutes** before the event. Editor alerts and optional Windows notifications also work while the app runs. Missed warnings collapse to one catch-up; successful checkpoints persist across restart. You can snooze for 15 minutes, complete, and reopen.
 - **Connected Calendar:** sign in from the compact Calendar tab, then mark reminders for automatic creation/update in your primary Google calendar while Pip runs. Pending changes retry. This is one-way; Google-side edits are not imported. [Setup and permissions](docs/google-calendar-setup.md). Manual event drafts and `.ics` export remain available.
 - **Pip and the tray:** drag the fox to move it. Click for the notepad; right-click for tools/settings. Hide/restore with your shortcut or tray. Closing a window keeps Pip running; **Quit Research Buddy** stops it.
 - **Portable research:** export readable Markdown with sources, summaries, journal history, evidence links, and workspace reminders.
@@ -87,6 +87,7 @@ The renderer uses React and TypeScript, with an isolated preload bridge. Electro
 - [Fox companion design](docs/superpowers/specs/2026-11-04-fox-companion-design.md)
 - [Original product design](docs/superpowers/specs/2026-11-03-research-buddy-design.md)
 - [Original implementation plan](docs/superpowers/plans/2026-11-03-research-buddy.md)
+- [Reminder update verification](docs/reminders-update-verification.md)
 - [Development decisions and verification](docs/development-progress.md)
 
 The original epic includes optional hosted AI and a broader release checklist. The current local build implements the usable offline foundation; it does not claim every epic item is finished. A project license has not been selected. Choose one before publishing a software release.

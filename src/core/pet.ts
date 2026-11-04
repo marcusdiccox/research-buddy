@@ -1,4 +1,5 @@
 import type { HitRegion, PetPreferences, PetView } from '../shared/contracts.js';
+import { petPhrases } from './phrases.js';
 export const defaultPetPreferences: PetPreferences = {
   petAppearance: 'red',
   petRoamArea: 'bottom',
@@ -10,38 +11,6 @@ export const defaultPetPreferences: PetPreferences = {
 export type Point = { x: number; y: number };
 export type WorkArea = Point & { width: number; height: number };
 export const petWindowSize = { width: 240, height: 260 };
-const jokes: Record<PetPreferences['petJokeStyle'], string[]> = {
-  wholesome: [
-    'Why did the fox bring a blanket? For a little undercover work.',
-    'My favorite kind of meeting? A meet-cute with a snack.',
-    'I made a tiny to-do list. First item: believe in you.',
-    'What’s a fox’s favorite weather? A little tailwind.',
-    'I tried to catch some fog. I mist.',
-    'I’m not procrastinating. I’m strategically fluffing my tail.',
-    'What do you call a fox who loves books? Well-red.',
-    'My paws are small, but my snack ambitions are enormous.',
-  ],
-  dad: [
-    'I only know 25 letters of the alphabet. I don’t know y.',
-    'Why did the scarecrow get promoted? Outstanding in his field.',
-    'I used to hate facial hair. Then it grew on me.',
-    'I’m reading a book about anti-gravity. It’s impossible to put down.',
-    'What do you call a fake noodle? An impasta.',
-    'I ordered a chicken and an egg. I’ll let you know.',
-    'What’s orange and sounds like a parrot? A carrot.',
-    'I don’t trust stairs. They’re always up to something.',
-  ],
-  nerdy: [
-    'There are 10 kinds of foxes: those who know binary and those who don’t.',
-    'Why was the computer cold? It left its Windows open.',
-    'My code has no bugs. Just surprise woodland creatures.',
-    'I asked my database for a snack. It returned a byte.',
-    'A SQL query walks into a forest and asks: can I join you?',
-    'I told a recursive joke. To understand it, first understand this joke.',
-    'My favorite shortcut? The one to the snack folder.',
-    'Why did the developer go outside? To get a fresh branch.',
-  ],
-};
 export function clampPetPosition(
   point: Point,
   size: { width: number; height: number },
@@ -122,6 +91,7 @@ export class PetBehavior {
   private wasHovered = false;
   private transition: { until: number; next: PetView['pose'] } | null = null;
   private previousPhrase = '';
+  private phraseBags = new Map<PetPreferences['petJokeStyle'], string[]>();
   constructor(
     public preferences: PetPreferences,
     position: Point,
@@ -139,12 +109,20 @@ export class PetBehavior {
   private speechInterval() {
     return this.range(35000, 65000);
   }
-  private choose(pool: string[]) {
-    const candidates = pool.filter((p) => p !== this.previousPhrase);
-    return candidates[Math.floor(this.range(0, candidates.length))] ?? pool[0];
+  private choosePhrase() {
+    const theme = this.preferences.petJokeStyle;
+    let bag = this.phraseBags.get(theme);
+    if (!bag?.length) {
+      bag = [...petPhrases[theme]];
+      this.phraseBags.set(theme, bag);
+    }
+    let index = Math.floor(this.range(0, bag.length));
+    if (bag[index] === this.previousPhrase && bag.length > 1) index = (index + 1) % bag.length;
+    const phrase = bag.splice(index, 1)[0];
+    this.previousPhrase = phrase;
+    return phrase;
   }
   private say(phrase: string, now: number) {
-    this.previousPhrase = phrase;
     this.frame.phrase = phrase;
     this.bubbleUntil = now + 8000;
     this.waveUntil = now + 1400;
@@ -215,7 +193,19 @@ export class PetBehavior {
   }
   tellJoke(now: number) {
     this.interact(now);
-    return this.say(this.choose(jokes[this.preferences.petJokeStyle]), now);
+    return this.say(this.choosePhrase(), now);
+  }
+  announceReminder(message: string, now: number): void {
+    this.entrance = null;
+    this.interact(now);
+    this.say(message, now);
+    this.bubbleUntil = now + this.range(8000, 12000);
+    // Give a sleeping fox time to finish waking before its greeting wave.
+    this.waveUntil = now + 2600;
+    if (this.transition?.next === 'walking') this.transition.next = 'waving';
+    if (!this.transition) this.setPose('waving', now);
+    this.restUntil = Math.max(this.restUntil, this.bubbleUntil);
+    this.nextSpeech = this.bubbleUntil + this.speechInterval();
   }
   snapshot(): PetFrame {
     return { ...this.frame };
@@ -297,7 +287,7 @@ export class PetBehavior {
       return this.snapshot();
     }
     if (!paused && now >= this.nextSpeech) {
-      this.say(this.choose(jokes[this.preferences.petJokeStyle]), now);
+      this.say(this.choosePhrase(), now);
       this.nextSpeech = now + this.speechInterval();
     }
     if (
@@ -313,36 +303,45 @@ export class PetBehavior {
     if (
       this.target &&
       (now >= this.walkUntil ||
-        Math.hypot(this.target.x - this.frame.x, this.target.y - this.frame.y) < 2)
+        Math.hypot(this.target.x - this.frame.x, this.target.y - this.frame.y) < 0.1)
     ) {
       this.target = null;
       this.restUntil = now + this.range(3500, 7000);
     }
     if (!this.target && now >= this.restUntil) {
       const maxX = area.x + Math.max(0, area.width - size.width),
-        maxY = area.y + Math.max(0, area.height - size.height) - 12;
+        maxY = area.y + Math.max(0, area.height - size.height - 12);
       this.frame.direction = this.random() < 0.5 ? -1 : 1;
       this.pace = this.range(12, 24);
+      const tripDistance = Math.min(this.range(25, 180), this.pace * 8);
       if (this.preferences.petRoamArea === 'bottom') {
-        let x = Math.max(
-          area.x,
-          Math.min(maxX, this.frame.x + this.frame.direction * this.range(50, 160)),
-        );
-        if (Math.abs(x - this.frame.x) < 20) {
-          this.frame.direction = this.frame.direction === 1 ? -1 : 1;
-          x = Math.max(
-            area.x,
-            Math.min(maxX, this.frame.x + this.frame.direction * this.range(50, 160)),
-          );
-        }
-        this.target = { x, y: Math.max(area.y, maxY) };
-      } else
+        if (this.frame.x - area.x < 40) this.frame.direction = 1;
+        else if (maxX - this.frame.x < 40) this.frame.direction = -1;
         this.target = {
-          x: this.range(area.x, maxX),
-          y: this.range(area.y, Math.max(area.y, maxY)),
+          x: Math.max(area.x, Math.min(maxX, this.frame.x + this.frame.direction * tripDistance)),
+          y: maxY,
         };
+      } else {
+        const heading = this.range(0, Math.PI * 2);
+        let dx = Math.cos(heading),
+          dy = Math.sin(heading);
+        if (this.frame.x - area.x < 40) dx = Math.max(0.25, Math.abs(dx));
+        else if (maxX - this.frame.x < 40) dx = -Math.max(0.25, Math.abs(dx));
+        if (this.frame.y - area.y < 40) dy = Math.max(0.25, Math.abs(dy));
+        else if (maxY - this.frame.y < 40) dy = -Math.max(0.25, Math.abs(dy));
+        const magnitude = Math.hypot(dx, dy);
+        this.target = {
+          x: Math.max(area.x, Math.min(maxX, this.frame.x + (dx / magnitude) * tripDistance)),
+          y: Math.max(area.y, Math.min(maxY, this.frame.y + (dy / magnitude) * tripDistance)),
+        };
+      }
       this.frame.direction = this.target.x < this.frame.x ? -1 : 1;
-      this.walkUntil = now + this.range(4000, 8000);
+      // Base the deadline on the actual local trip, including its stand-up transition.
+      this.walkUntil =
+        now +
+        (Math.hypot(this.target.x - this.frame.x, this.target.y - this.frame.y) / this.pace) *
+          1000 +
+        1000;
     }
     if (this.target) {
       this.setPose('walking', now, flags.reducedMotion);

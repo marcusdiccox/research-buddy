@@ -168,6 +168,7 @@ test('expansion follows the displayed text after switching saved note kinds', as
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(bubble.getByRole('status')).toContainText('Saved');
   await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
+  await bubble.getByLabel('Date and time').fill('2030-11-09T15:00');
   await bubble.getByRole('textbox', { name: 'Note text' }).fill('Current shared thought');
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(bubble.getByRole('status')).toContainText('Saved');

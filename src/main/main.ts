@@ -18,7 +18,10 @@ import { BuddyStore, text } from '../core/store.js';
 import { summarize, answerFromNotes } from '../core/research.js';
 import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
-import { deliverDueReminders } from '../core/notifications.js';
+import { deliverScheduledReminders } from '../core/notifications.js';
+import { ReminderChannel } from '../core/reminder-channel.js';
+import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
+import { EventEmitter } from 'node:events';
 import { CompanionController } from './companion.js';
 import { placeWritingBubble } from '../core/popover.js';
 import { CalendarSync, type CalendarConnection } from '../core/calendar-sync.js';
@@ -56,6 +59,7 @@ let bubbleLayout = {
 };
 let notebookLaunch: NotebookLaunch = { action: 'notes' };
 const notices = new Set<Notification>();
+const foregroundReminders = new ReminderChannel();
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
   if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
@@ -186,6 +190,17 @@ async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
       }
     });
     writingBubble.on('hide', () => companion?.setEngaged(false));
+    writingBubble.on('blur', () => {
+      setTimeout(() => {
+        if (
+          writingBubble &&
+          !writingBubble.isDestroyed() &&
+          !writingBubble.isFocused() &&
+          !db.settings().bubblePinned
+        )
+          writingBubble.hide();
+      }, 120);
+    });
     bubbleReady = load(writingBubble, 'bubble');
   }
   await bubbleReady;
@@ -194,7 +209,7 @@ async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
   const placement = placeWritingBubble(pet, area, writingBubble.getBounds());
   bubbleLayout = { tailX: placement.tailX, tailSide: placement.tailSide, action };
   writingBubble.setBounds({ x: placement.x, y: placement.y, width: 360, height: 340 });
-  writingBubble.setAlwaysOnTop(db.settings().alwaysOnTop);
+  writingBubble.setAlwaysOnTop(db.settings().bubblePinned || db.settings().alwaysOnTop);
   companion?.setEngaged(true);
   writingBubble.show();
   writingBubble.focus();
@@ -206,27 +221,96 @@ function openNotepad(action: NotebookAction = 'notes') {
     dialog.showErrorBox('Pip could not open', 'Please restart Research Buddy and try again.'),
   );
 }
+function broadcastReminder(message: string) {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (!window.isDestroyed()) window.webContents.send('buddy:reminder', message);
+  }
+}
+function deliverForegroundReminders() {
+  foregroundReminders.tick(
+    Date.now(),
+    [writingBubble, notepad, workspace].some((w) => w && !w.isDestroyed() && w.isVisible()),
+    broadcastReminder,
+  );
+}
 function notifyDue() {
-  if (!db || !db.settings().notifications || !Notification.isSupported() || testMode) return;
-  deliverDueReminders(
+  if (!db) return;
+  deliverScheduledReminders(
     db,
-    (r) => {
-      const notification = new Notification({
-        title: r.title,
-        body:
-          r.details ||
-          'A gentle nudge from Research Buddy. Open Reminders to snooze or mark it done.',
-        silent: false,
+    (alert) => {
+      const notice = new EventEmitter();
+      const message = formatReminderAlert(alert);
+      return Object.assign(notice, {
+        show() {
+          let finished = false;
+          let pending = 0;
+          const shown = () => {
+            if (!finished) {
+              finished = true;
+              notice.emit('show');
+            }
+          };
+          const failed = () => {
+            pending--;
+            if (!finished && pending === 0) {
+              finished = true;
+              notice.emit('failed');
+            }
+          };
+          const key = `${alert.reminder.id}:${alert.reminder.dueAt}:${alert.offsetMinutes}`;
+          const read = () => {
+            const current = db.getReminder(alert.reminder.id);
+            const latest = REMINDER_LEAD_MINUTES.filter(
+              (offset) => Date.parse(alert.reminder.dueAt) - offset * 60000 <= Date.now(),
+            ).at(-1);
+            return current &&
+              !current.completed &&
+              current.remindEnabled !== false &&
+              current.dueAt === alert.reminder.dueAt &&
+              latest === alert.offsetMinutes
+              ? formatReminderAlert({ ...alert, reminder: current })
+              : null;
+          };
+          // Foreground alerts share a readable slot rather than overwriting each other.
+          pending++;
+          foregroundReminders.enqueue(key, read, shown, failed);
+          if (companion?.canRemind) {
+            pending++;
+            if (!companion.remind(key, read, shown, failed)) failed();
+          }
+          if (!testMode && db.settings().notifications && Notification.isSupported()) {
+            pending++;
+            try {
+              const notification = new Notification({
+                title: 'Pip reminder',
+                body: message,
+                silent: false,
+              });
+              notices.add(notification);
+              notification.once('show', shown);
+              notification.once('failed', failed);
+              notification.on(
+                'click',
+                () => void showNotepad('reminder', undefined, alert.reminder.id),
+              );
+              notification.on('close', () => notices.delete(notification));
+              notification.on('failed', () => notices.delete(notification));
+              notification.show();
+            } catch {
+              failed();
+            }
+          }
+          if (!finished && pending === 0) {
+            finished = true;
+            notice.emit('failed');
+          }
+        },
       });
-      notices.add(notification);
-      notification.on('click', showWorkspace);
-      notification.on('close', () => notices.delete(notification));
-      notification.on('failed', () => notices.delete(notification));
-      return notification;
     },
     new Date(),
     changed,
   );
+  deliverForegroundReminders();
 }
 if (!testMode && !app.requestSingleInstanceLock()) app.quit();
 else {
@@ -314,6 +398,7 @@ else {
       tray.on('double-click', () => openNotepad());
       screen.on('display-removed', () => companion?.clamp());
       screen.on('display-metrics-changed', () => companion?.clamp());
+      setInterval(deliverForegroundReminders, 250).unref();
       setInterval(notifyDue, 15000).unref();
       setTimeout(notifyDue, 1500).unref();
     })
@@ -453,7 +538,9 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         break;
       }
       case 'settings': {
-        value = db.saveSettings(data as Partial<Settings>);
+        const saved = db.saveSettings(data as Partial<Settings>);
+        value = saved;
+        writingBubble?.setAlwaysOnTop(saved.bubblePinned || saved.alwaysOnTop);
         companion?.configure();
         break;
       }

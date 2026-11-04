@@ -120,6 +120,7 @@ export default function App() {
       }),
     [dialog],
   );
+  useEffect(() => window.buddy?.onReminder((text) => setToast({ text })), []);
   const closeDialog = useCallback(() => setDialog(null), []);
   async function run<T>(action: string, payload?: unknown, message?: string): Promise<T | null> {
     if (busy) return null;
@@ -1259,6 +1260,7 @@ function ReminderForm({
     details: string;
     dueAt: string;
     durationMinutes: number;
+    remindEnabled: boolean;
   }) => void;
 }) {
   return (
@@ -1271,6 +1273,7 @@ function ReminderForm({
           details: String(f.get('details')),
           dueAt: new Date(String(f.get('dueAt'))).toISOString(),
           durationMinutes: Number(f.get('duration')),
+          remindEnabled: f.get('remindEnabled') === 'on',
         });
       }}
     >
@@ -1315,6 +1318,14 @@ function ReminderForm({
           defaultValue={reminder?.details}
           placeholder="Anything you’ll want to remember later…"
         />
+      </label>
+      <label className="reminder-opt-in">
+        <input
+          name="remindEnabled"
+          type="checkbox"
+          defaultChecked={reminder?.remindEnabled !== false}
+        />
+        Remind me
       </label>
       <p className="form-hint">
         <Bell size={14} />

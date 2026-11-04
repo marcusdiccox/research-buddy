@@ -205,7 +205,7 @@ test('shortcut restoration walks Pip onto the display at a clickable pace', asyn
       { timeout: 12000 },
     )
     .toBe(true);
-  expect(Math.abs((await position()).width-start.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs((await position()).width - start.width)).toBeLessThanOrEqual(2);
 });
 test('the fox paints while unfocused and re-enables background throttling when hidden', async () => {
   const throttled = () =>
@@ -222,12 +222,22 @@ test('the fox paints while unfocused and re-enables background throttling when h
 });
 
 test('pixel fox frames animate, sleep curls up, and reduced motion freezes the sprite', async () => {
-  // This journey accelerates inactivity. Keep real desktop cursor activity from
-  // waking Pip until the explicit pointer interaction below.
+  // Accelerate inactivity without incidental desktop cursor activity waking Pip.
   await app.evaluate(({ screen }) => {
     (globalThis as any).__pipRealCursor = screen.getCursorScreenPoint;
     screen.getCursorScreenPoint = () => ({ x: 0, y: 0 });
   });
+  // Compare native pixel buffers: cropped PNG screenshots of transparent windows
+  // can change edge pixels at Windows display scaling even with animation off.
+  const pixels = () =>
+    app.evaluate(async ({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows().find((w) =>
+        w.webContents.getURL().endsWith('#pet'),
+      )!;
+      return (await window.webContents.capturePage({ x: 80, y: 172, width: 80, height: 80 }))
+        .toBitmap()
+        .toString('base64');
+    });
   const sprite = pet.locator('.fox-sprite');
   await expect(sprite).toBeVisible();
   await pet.evaluate(() =>
@@ -242,13 +252,12 @@ test('pixel fox frames animate, sleep curls up, and reduced motion freezes the s
     Date.now = () => now() + 31000;
   });
   await expect(pet.locator('.fox')).toHaveAttribute('data-pose', 'waving');
-  const first = await sprite.screenshot();
+  const first = await pixels();
   await pet.waitForTimeout(220);
-  const next = await sprite.screenshot();
-  expect(first.equals(next)).toBe(false);
+  expect(await pixels()).not.toBe(first);
   await app.evaluate(() => {
-    const realNow = Date.now;
-    Date.now = () => realNow() + 121000;
+    const now = Date.now;
+    Date.now = () => now() + 121000;
   });
   await expect(pet.locator('.fox')).toHaveAttribute('data-pose', 'curling-up');
   await expect(pet.locator('.fox')).toHaveAttribute('data-pose', 'sleeping');
@@ -262,10 +271,10 @@ test('pixel fox frames animate, sleep curls up, and reduced motion freezes the s
   await pet.evaluate(() => window.buddy!.call('settings', { petReducedMotion: true }));
   await expect(pet.locator('.desktop-fox')).toHaveClass(/motion-reduced/);
   await expect(pet.locator('.fox')).toHaveAttribute('data-pose', 'idle');
-  await pet.waitForTimeout(100); // Allow the native compositor to present the newly frozen pose.
-  const frozen = await sprite.screenshot();
+  expect(await sprite.evaluate((e) => getComputedStyle(e).animationName)).toBe('none');
+  const frozen = await pixels();
   await pet.waitForTimeout(600);
-  expect(frozen.equals(await sprite.screenshot())).toBe(true);
+  expect(await pixels()).toBe(frozen);
 });
 
 test('all sprite frames keep their paws on the same ground baseline', async () => {

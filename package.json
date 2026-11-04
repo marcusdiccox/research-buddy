@@ -1,6 +1,6 @@
 {
   "name": "research-buddy",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "A cozy desktop research companion with notes, reminders, and calendar helpers.",

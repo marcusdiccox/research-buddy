@@ -1,12 +1,14 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID, createHash } from 'node:crypto';
 import { defaultPetPreferences } from './pet.js';
+import { REMINDER_LEAD_MINUTES } from './reminder-policy.js';
 import type {
   Project,
   Note,
   NoteDraft,
   Reminder,
   ReminderDraft,
+  ReminderAlert,
   JournalEntry,
   JournalDraft,
   ResearchResult,
@@ -21,7 +23,20 @@ const defaults: Settings = {
   alwaysOnTop: true,
   notifications: true,
   providerConsent: false,
+  bubblePinned: false,
 };
+interface CheckpointState {
+  settled?: boolean;
+  attemptAt?: string;
+  retryAt?: string;
+  failures?: number;
+}
+interface ReminderSchedule {
+  id: string;
+  dueAt: string;
+  lastAttemptAt?: string;
+  stages: Partial<Record<ReminderAlert['offsetMinutes'], CheckpointState>>;
+}
 export function text(value: unknown, label: string, max = 200, optional = false): string {
   if (typeof value !== 'string' || (!optional && !value.trim()) || [...value].length > max)
     throw new Error(
@@ -122,6 +137,7 @@ export class BuddyStore {
                 'notifications',
                 'providerConsent',
                 'petReducedMotion',
+                'bubblePinned',
               ].includes(key)
             ? typeof value === 'boolean'
             : ['petX', 'petY'].includes(key) && typeof value === 'number' && Number.isFinite(value),
@@ -223,6 +239,8 @@ export class BuddyStore {
   saveReminder(input: ReminderDraft): Reminder {
     if (input.projectId) this.get<Project>('project', input.projectId);
     const old = input.id ? this.get<Reminder>('reminder', input.id) : undefined;
+    if (input.remindEnabled !== undefined && typeof input.remindEnabled !== 'boolean')
+      throw new Error('Choose whether to enable reminders.');
     if (
       !Number.isInteger(input.durationMinutes) ||
       input.durationMinutes < 5 ||
@@ -239,11 +257,21 @@ export class BuddyStore {
       completed: old?.completed ?? false,
       calendarSync:
         typeof input.calendarSync === 'boolean' ? input.calendarSync : (old?.calendarSync ?? false),
-      notifiedAt: null,
+      remindEnabled: input.remindEnabled ?? old?.remindEnabled ?? true,
+      notifiedAt: old?.notifiedAt ?? null,
+      notificationAttemptAt: old?.notificationAttemptAt,
+      notificationRetryAt: old?.notificationRetryAt,
+      notificationError: old?.notificationError,
+      notificationFailures: old?.notificationFailures,
       createdAt: old?.createdAt ?? new Date().toISOString(),
     };
-    this.put('reminder', r);
-    return r;
+    return this.transaction(() => {
+      if (old && (old.dueAt !== r.dueAt || old.remindEnabled !== r.remindEnabled)) {
+        this.cancelReminderAttempts(r, old.dueAt !== r.dueAt);
+      }
+      this.put('reminder', r);
+      return r;
+    });
   }
   getReminder(id: string) {
     return this.get<Reminder>('reminder', id);
@@ -252,25 +280,144 @@ export class BuddyStore {
     if (typeof completed !== 'boolean') throw new Error('Invalid reminder state.');
     const r = this.getReminder(id);
     r.completed = completed;
-    r.notificationAttemptAt = null;
-    r.notificationRetryAt = null;
-    r.notificationError = false;
-    r.notificationFailures = 0;
-    if (!completed) r.notifiedAt = null;
-    this.put('reminder', r);
-    return r;
+    return this.transaction(() => {
+      this.cancelReminderAttempts(r, false);
+      if (!completed) r.notifiedAt = null;
+      this.put('reminder', r);
+      return r;
+    });
   }
   snoozeReminder(id: string, dueAt: string) {
     const r = this.getReminder(id);
-    r.dueAt = validDate(dueAt);
-    r.notifiedAt = null;
-    r.notificationAttemptAt = null;
-    r.notificationRetryAt = null;
-    r.notificationError = false;
-    r.notificationFailures = 0;
+    const nextDueAt = validDate(dueAt);
+    const changed = r.dueAt !== nextDueAt;
+    r.dueAt = nextDueAt;
     r.completed = false;
-    this.put('reminder', r);
-    return r;
+    return this.transaction(() => {
+      this.cancelReminderAttempts(r, changed);
+      this.put('reminder', r);
+      return r;
+    });
+  }
+  private reminderSchedule(reminder: Reminder): ReminderSchedule {
+    const row = this.db
+      .prepare('SELECT value FROM records WHERE kind=? AND id=?')
+      .get('reminder-schedule', reminder.id) as { value: string } | undefined;
+    const saved = row ? (JSON.parse(row.value) as ReminderSchedule) : undefined;
+    if (saved?.dueAt === reminder.dueAt) return saved;
+    const schedule: ReminderSchedule = {
+      id: reminder.id,
+      dueAt: reminder.dueAt,
+      stages: {},
+      lastAttemptAt: saved?.lastAttemptAt,
+    };
+    // Existing single-alert reminders were delivered at/after the event. Carry that
+    // acknowledgement into the checkpoint ledger when upgrading an old database.
+    if (!saved && reminder.notifiedAt) {
+      for (const offset of REMINDER_LEAD_MINUTES) {
+        if (Date.parse(reminder.dueAt) - offset * 60000 <= Date.parse(reminder.notifiedAt))
+          schedule.stages[offset] = { settled: true };
+      }
+    }
+    return schedule;
+  }
+  private cancelReminderAttempts(reminder: Reminder, reset: boolean) {
+    const schedule = this.reminderSchedule(reminder);
+    if (reset) {
+      schedule.stages = {};
+      reminder.notifiedAt = null;
+    } else {
+      for (const stage of Object.values(schedule.stages)) {
+        delete stage.attemptAt;
+        delete stage.retryAt;
+        stage.failures = 0;
+      }
+    }
+    reminder.notificationAttemptAt = null;
+    reminder.notificationRetryAt = null;
+    reminder.notificationError = false;
+    reminder.notificationFailures = 0;
+    this.put('reminder-schedule', schedule);
+  }
+  takeReminderAlerts(now: string): ReminderAlert[] {
+    const time = Date.parse(validDate(now));
+    return this.transaction(() => {
+      const alerts: ReminderAlert[] = [];
+      for (const reminder of this.all<Reminder>('reminder')) {
+        if (reminder.completed || reminder.remindEnabled === false) continue;
+        const schedule = this.reminderSchedule(reminder);
+        const elapsed = REMINDER_LEAD_MINUTES.filter(
+          (offset) => Date.parse(reminder.dueAt) - offset * 60000 <= time,
+        );
+        const offsetMinutes = elapsed.at(-1);
+        // Earlier missed checkpoints are superseded, including interrupted or
+        // failed attempts. A resume can therefore display at most one alert.
+        for (const offset of elapsed.slice(0, -1)) schedule.stages[offset] = { settled: true };
+        if (offsetMinutes !== undefined) {
+          const stage = (schedule.stages[offsetMinutes] ??= {});
+          if (
+            !stage.settled &&
+            (!stage.retryAt || Date.parse(stage.retryAt) <= time) &&
+            (!stage.attemptAt || Date.parse(stage.attemptAt) + 5 * 60000 <= time)
+          ) {
+            // Monotonic reservation timestamps also distinguish a stale callback
+            // after off/on or changing a due time away and back in the same tick.
+            const attemptAt = new Date(
+              Math.max(
+                time,
+                schedule.lastAttemptAt ? Date.parse(schedule.lastAttemptAt) + 1 : time,
+              ),
+            ).toISOString();
+            stage.attemptAt = attemptAt;
+            schedule.lastAttemptAt = attemptAt;
+            reminder.notificationAttemptAt = attemptAt;
+            this.put('reminder', reminder);
+            alerts.push({
+              reminder,
+              offsetMinutes,
+              attemptAt,
+              scheduledAt: new Date(
+                Date.parse(reminder.dueAt) - offsetMinutes * 60000,
+              ).toISOString(),
+            });
+          }
+        }
+        this.put('reminder-schedule', schedule);
+      }
+      return alerts;
+    });
+  }
+  finishReminderAlert(alert: ReminderAlert, successful: boolean): void {
+    this.transaction(() => {
+      const reminder = this.getReminder(alert.reminder.id);
+      if (
+        reminder.completed ||
+        reminder.remindEnabled === false ||
+        reminder.dueAt !== alert.reminder.dueAt
+      )
+        return;
+      const schedule = this.reminderSchedule(reminder);
+      const stage = schedule.stages[alert.offsetMinutes];
+      if (!stage || stage.settled || stage.attemptAt !== alert.attemptAt) return;
+      delete stage.attemptAt;
+      reminder.notificationAttemptAt = null;
+      reminder.notificationError = !successful;
+      if (successful) {
+        stage.settled = true;
+        delete stage.retryAt;
+        stage.failures = 0;
+        reminder.notifiedAt = alert.attemptAt;
+      } else {
+        stage.failures = Math.min(6, (stage.failures ?? 0) + 1);
+        stage.retryAt = new Date(
+          Date.parse(alert.attemptAt) + Math.min(60, 5 * 2 ** (stage.failures - 1)) * 60000,
+        ).toISOString();
+      }
+      reminder.notificationRetryAt = stage.retryAt ?? null;
+      reminder.notificationFailures = stage.failures;
+      this.put('reminder-schedule', schedule);
+      this.put('reminder', reminder);
+    });
   }
   takeDueReminders(now: string): Reminder[] {
     const time = Date.parse(validDate(now));
@@ -278,6 +425,7 @@ export class BuddyStore {
       const due = this.all<Reminder>('reminder').filter(
         (r) =>
           !r.completed &&
+          r.remindEnabled !== false &&
           !r.notifiedAt &&
           Date.parse(r.dueAt) <= time &&
           (!r.notificationRetryAt || Date.parse(r.notificationRetryAt) <= time) &&
@@ -292,7 +440,7 @@ export class BuddyStore {
   }
   finishNotification(id: string, attemptAt: string, successful: boolean) {
     const r = this.getReminder(id);
-    if (r.completed || r.notificationAttemptAt !== attemptAt) return;
+    if (r.completed || r.remindEnabled === false || r.notificationAttemptAt !== attemptAt) return;
     r.notificationAttemptAt = null;
     r.notificationError = !successful;
     if (successful) {

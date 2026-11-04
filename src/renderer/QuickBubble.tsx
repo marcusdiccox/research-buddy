@@ -6,7 +6,7 @@ import {
   type CSSProperties,
   type FormEvent,
 } from 'react';
-import { ArrowUpRight, Bell, BookOpen, CalendarDays, Settings, X } from 'lucide-react';
+import { ArrowUpRight, Bell, BookOpen, CalendarDays, Settings, X, Pin } from 'lucide-react';
 import type { Note, Reminder, Snapshot } from '../shared/contracts';
 import './floating.css';
 
@@ -34,9 +34,11 @@ export function QuickBubble() {
   const [mode, setMode] = useState<Mode>('notes');
   const [text, setText] = useState('');
   const [dateTime, setDateTime] = useState(nextHour);
+  const [remindEnabled, setRemindEnabled] = useState(true);
   const [data, setData] = useState<Snapshot | null>(null);
   const [layout, setLayout] = useState<BubbleLayout>({ tailX: 180, tailSide: 'bottom' });
   const [busy, setBusy] = useState(false);
+  const [reminderNotice, setReminderNotice] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const busyRef = useRef(false);
@@ -75,7 +77,10 @@ export function QuickBubble() {
       return;
     }
     setText('body' in item ? item.body : item.details);
-    if ('dueAt' in item) setDateTime(localDate(new Date(item.dueAt)));
+    if ('dueAt' in item) {
+      setDateTime(localDate(new Date(item.dueAt)));
+      setRemindEnabled(item.remindEnabled !== false);
+    }
     savedItem.current = { ...previous, fingerprint };
   }, []);
 
@@ -99,6 +104,21 @@ export function QuickBubble() {
     [refresh],
   );
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsub = window.buddy?.onReminder((text) => {
+      if (timer) clearTimeout(timer);
+      setReminderNotice(text);
+      timer = setTimeout(
+        () => setReminderNotice((current) => (current === text ? null : current)),
+        12000,
+      );
+    });
+    return () => {
+      unsub?.();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
   async function saveDraft() {
     if (mode === 'notes') {
       const existing = data?.notes.find((note) => note.id === noteId.current);
@@ -127,6 +147,7 @@ export function QuickBubble() {
       dueAt: date.toISOString(),
       durationMinutes: existing?.durationMinutes ?? 30,
       calendarSync: mode === 'calendar',
+      remindEnabled,
     });
     if (!saved?.id) throw new Error('The reminder was not saved. Try again.');
     reminderId.current = saved.id;
@@ -194,6 +215,23 @@ export function QuickBubble() {
         <header className="floating-header">
           <span className="bubble-caption">Pip</span>
           <div className="floating-header-actions">
+            <button
+              type="button"
+              className="floating-icon"
+              aria-label={data?.settings.bubblePinned ? 'Unpin note' : 'Pin note'}
+              aria-pressed={!!data?.settings.bubblePinned}
+              title={data?.settings.bubblePinned ? 'Unpin' : 'Keep pinned'}
+              disabled={busy || !data}
+              onClick={() =>
+                void run(async () => {
+                  await window.buddy!.call('settings', {
+                    bubblePinned: !data?.settings.bubblePinned,
+                  });
+                })
+              }
+            >
+              <Pin size={14} />
+            </button>
             <button
               type="button"
               className="floating-icon"
@@ -290,6 +328,20 @@ export function QuickBubble() {
                 />
               </label>
             )}
+            {mode !== 'notes' && (
+              <label className="bubble-remind">
+                <input
+                  type="checkbox"
+                  checked={remindEnabled}
+                  disabled={busy}
+                  onChange={(event) => {
+                    dirty.current = true;
+                    setRemindEnabled(event.target.checked);
+                  }}
+                />
+                Remind me
+              </label>
+            )}
             {mode === 'calendar' && (
               <div className="bubble-calendar-status">
                 <span>
@@ -311,9 +363,9 @@ export function QuickBubble() {
           </div>
           <p
             className={`floating-status ${message?.error ? 'is-error' : ''}`}
-            role={message?.error ? 'alert' : 'status'}
+            role={message?.error || reminderNotice ? 'alert' : 'status'}
           >
-            {message?.text ?? '\u00a0'}
+            {(message?.error ? message.text : (reminderNotice ?? message?.text)) ?? '\u00a0'}
           </p>
           <footer className="bubble-footer">
             <button
