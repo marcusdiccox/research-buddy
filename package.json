@@ -14,8 +14,8 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "make": "npm run build && electron-builder --win nsis --x64",
-    "pack": "npm run build && electron-builder --win dir --x64"
+    "make": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "pack": "npm run build && electron-builder --win dir --x64 --publish never"
   },
   "build": {
     "appId": "com.researchbuddy.desktop",
