@@ -1,14 +1,14 @@
-# Research Buddy 🌱
+# Research Buddy 🦊
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
 **Status: working early Windows build · fox update 0.2.** The first version works locally without an account, API key, or subscription. Hosted AI and calendar account sync are future work.
 
-![Research Buddy with Pip and a fictional sample workspace](docs/screenshots/home.png)
+![Pip’s red pixel-fox poses](docs/screenshots/fox-red.png)
 
 ## Try it
 
-Download the Windows installer from the latest successful run in [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+Download the Windows installer from the [verified fox Windows build](https://github.com/marcusdiccox/research-buddy/actions/runs/41848963978): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
 For the local fox update, open **`release-fox-final/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
@@ -19,8 +19,6 @@ For the local fox update, open **`release-fox-final/win-unpacked/Research Buddy.
 5. Press **Ctrl + Alt + P** to show or hide Pip while using any app. The system tray is always a fallback.
 
 The early build is unsigned. Windows may show its usual prompt for an unrecognized app. Supported target: Windows 11 x64; this build was exercised on the development computer, not a separate clean machine.
-
-![Pip�s red pixel-fox poses](docs/screenshots/fox-red.png)
 
 ## Make the fox your own
 

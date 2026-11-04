@@ -52,15 +52,18 @@ Plan: `docs/superpowers/plans/2026-11-04-fox-companion.md`.
 - Added a pure behavior engine, native companion controller, three roaming choices, three joke themes, four chatter levels, reduced motion, alternate shortcut presets and conflict fallback. Shortcut Ctrl+Alt+P uses showInactive so the notebook does not steal focus.
 - The app now starts with just the fox; its menu opens the existing notebook/reminder/settings views. Settings persist in the original SQLite database without changing note records.
 - Independent review found native-close visibility inconsistency, stale shortcut tooltip and interrupted position persistence. Regression checks were observed failing before the fixes. Close now hides; one toggle restores; quit releases shortcuts/timers and saves the settled position.
-- 23 backend tests pass. Packaged nine-journey desktop verification and real-desktop checks are being completed before publication.
+- Initial fox verification passed 23 backend tests and nine packaged journeys; final pixel-fox verification is recorded below.
 
-## Pixel fox and livelier behavior � 2026-11-04
+## Pixel fox and livelier behavior - 2026-11-04
 
 - User supplied the pixel fox visual reference, then requested more movement, a smaller pet, posture transitions and automatic sleep. Generated original transparent base/transition atlases with the built-in image tool; the reference image is not redistributed.
-- Renderer uses64px logical sprite frames at104px desktop size, shared Arctic/Midnight palettes, alpha-tested edges and aligned ground baselines. Idle, walking, waving, sleeping, stand-up, sit-down, curl-up and waking stretch are distinct poses.
-- Rest1.8�4s, walk7�12s at32px/s. After120s without fox interaction Pip curls up automatically. Hover/click wakes; manual nap action removed. External keyboard activity is not monitored.
+- Renderer uses 64px logical sprite frames at 104px desktop size, shared Arctic/Midnight palettes, alpha-tested edges and aligned ground baselines. Idle, walking, waving, sleeping, stand-up, sit-down, curl-up and waking stretch are distinct poses.
+- Rest 1.8-4s, walk 7-12s at 32px/s. After 120s without fox interaction Pip curls up automatically. Hover/click wakes; manual nap action removed. External keyboard activity is not monitored.
 - Fixed real-launch background throttling: visible companion continues rendering without keyboard focus, hidden companion throttles/stops timers.
-- Focused independent reviews found a baseline jump and click-release cancelling waking. Both were reproduced in regressions before fixes. Every atlas cell now shares ground row60; pointer release preserves the wake transition.
-  - 24 backend tests and 12 packaged desktop journeys pass. Archive SHA-256 integrity verified for all4,737 packed files. Native normal-launch screenshot confirms the smaller pixel fox visibly walks over the desktop.
+- Focused independent reviews found a baseline jump and click-release cancelling waking. Both were reproduced in regressions before fixes. Every atlas cell now shares ground row 60; pointer release preserves the wake transition.
+- 24 backend tests and 12 packaged desktop journeys pass. Archive SHA-256 integrity verified for all 4,737 packed files. Native normal-launch screenshot confirms the smaller pixel fox visibly walks over the desktop.
 
-- Packaging note: modifying the included artwork README during packaging changed its size and invalidated archive offsets. Rebuilt with inputs held unchanged, verified every archive file against its SHA-256 metadata, then reran all12 packaged journeys successfully.
+- Packaging note: modifying the included artwork README during packaging changed its size and invalidated archive offsets. Rebuilt with inputs held unchanged, verified every archive file against its SHA-256 metadata, then reran all 12 packaged journeys successfully.
+
+- Final normal-desktop checks confirmed visible walking, automatic curling/sleep, and global Ctrl+Alt+P hide/restore from Chrome. The updated app remains running on the development computer.
+- Public main commit `37a4bc0` passed hosted Windows type checks, all 24 backend tests, all 12 desktop journeys, NSIS packaging and installer artifact upload: https://github.com/marcusdiccox/research-buddy/actions/runs/41848963978.
