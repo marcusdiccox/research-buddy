@@ -8,6 +8,8 @@ A cozy desktop notebook with a little companion named **Pip**. Save your researc
 
 ## Try it
 
+Download the Windows installer from the [successful Windows build](https://github.com/marcusdiccox/research-buddy/actions/runs/41779474518): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+
 On the computer where this project was built, open **`release/win-unpacked/Research Buddy.exe`**. The Windows installer is generated in `release/` by `npm run make`.
 
 1. Click **Try a sample workspace** to look around using fictional research, or **Add a note** to start with your own text.

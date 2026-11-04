@@ -41,3 +41,4 @@ The user authorized implementation after planning and added cute, approachable d
 - Published epic https://github.com/marcusdiccox/research-buddy/issues/1 and ten native child issues (#2–#11), with a v0.1 milestone.
 - Hosted CI was triggered by the initial push; local build/test evidence remains recorded in the release checklist.
 - The first hosted run passed type checks, backend tests, build, and desktop tests. Its installer was built, but electron-builder's implicit CI publishing attempted an unconfigured release upload. Packaging now explicitly uses `--publish never`; GitHub Actions uploads the installer artifact separately.
+- The corrected hosted run passed every required step, including NSIS packaging and installer artifact upload: https://github.com/marcusdiccox/research-buddy/actions/runs/41779474518.

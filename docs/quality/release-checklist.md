@@ -15,6 +15,7 @@ This is an early local build, not completion of the entire original epic.
 
 - [x] NSIS installer generation.
 - [x] Run the same four Electron journeys using the packaged executable: 4 passed.
+- [x] Hosted Windows CI passed type checks, all tests, build, installer packaging, and artifact upload: [run 41779474518](https://github.com/marcusdiccox/research-buddy/actions/runs/41779474518).
 - [x] Installer: `release/Research Buddy Setup 0.1.0.exe` (123,555,355 bytes). Unpacked app: `release/win-unpacked/Research Buddy.exe`.
 
 Installer SHA-256: `30FD38BF91A394060F877BD2F17ED77C1BD8092FD600903C5DD9457FF35C634F`.
