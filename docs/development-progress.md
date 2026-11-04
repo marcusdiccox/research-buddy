@@ -42,3 +42,25 @@ The user authorized implementation after planning and added cute, approachable d
 - Hosted CI was triggered by the initial push; local build/test evidence remains recorded in the release checklist.
 - The first hosted run passed type checks, backend tests, build, and desktop tests. Its installer was built, but electron-builder's implicit CI publishing attempted an unconfigured release upload. Packaging now explicitly uses `--publish never`; GitHub Actions uploads the installer artifact separately.
 - The corrected hosted run passed every required step, including NSIS packaging and installer artifact upload: https://github.com/marcusdiccox/research-buddy/actions/runs/41779474518.
+
+## Fox companion update — 2026-11-04
+
+Plan: `docs/superpowers/plans/2026-11-04-fox-companion.md`.
+
+- User selected bottom-edge wandering by default and requested red/light, Arctic and dark fox appearances plus configurable jokes/behavior.
+- Replaced the sprout with SVG/CSS fox artwork and blinking, breathing, walking, waving and sleeping poses. Fixed the opaque HTML-root background, removed permanent pet labels/buttons, and added native click-through hit regions.
+- Added a pure behavior engine, native companion controller, three roaming choices, three joke themes, four chatter levels, reduced motion, alternate shortcut presets and conflict fallback. Shortcut Ctrl+Alt+P uses showInactive so the notebook does not steal focus.
+- The app now starts with just the fox; its menu opens the existing notebook/reminder/settings views. Settings persist in the original SQLite database without changing note records.
+- Independent review found native-close visibility inconsistency, stale shortcut tooltip and interrupted position persistence. Regression checks were observed failing before the fixes. Close now hides; one toggle restores; quit releases shortcuts/timers and saves the settled position.
+- 23 backend tests pass. Packaged nine-journey desktop verification and real-desktop checks are being completed before publication.
+
+## Pixel fox and livelier behavior � 2026-11-04
+
+- User supplied the pixel fox visual reference, then requested more movement, a smaller pet, posture transitions and automatic sleep. Generated original transparent base/transition atlases with the built-in image tool; the reference image is not redistributed.
+- Renderer uses64px logical sprite frames at104px desktop size, shared Arctic/Midnight palettes, alpha-tested edges and aligned ground baselines. Idle, walking, waving, sleeping, stand-up, sit-down, curl-up and waking stretch are distinct poses.
+- Rest1.8�4s, walk7�12s at32px/s. After120s without fox interaction Pip curls up automatically. Hover/click wakes; manual nap action removed. External keyboard activity is not monitored.
+- Fixed real-launch background throttling: visible companion continues rendering without keyboard focus, hidden companion throttles/stops timers.
+- Focused independent reviews found a baseline jump and click-release cancelling waking. Both were reproduced in regressions before fixes. Every atlas cell now shares ground row60; pointer release preserves the wake transition.
+  - 24 backend tests and 12 packaged desktop journeys pass. Archive SHA-256 integrity verified for all4,737 packed files. Native normal-launch screenshot confirms the smaller pixel fox visibly walks over the desktop.
+
+- Packaging note: modifying the included artwork README during packaging changed its size and invalidated archive offsets. Rebuilt with inputs held unchanged, verified every archive file against its SHA-256 metadata, then reran all12 packaged journeys successfully.

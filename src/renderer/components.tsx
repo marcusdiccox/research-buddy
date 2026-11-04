@@ -1,23 +1,19 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X, Sprout } from 'lucide-react';
+import { Fox } from './Fox';
 
-export function Pip({ small = false, happy = false }: { small?: boolean; happy?: boolean }) {
+export function Pip({
+  small = false,
+  happy = false,
+  appearance = 'red',
+}: {
+  small?: boolean;
+  happy?: boolean;
+  appearance?: import('../shared/contracts').PetPreferences['petAppearance'];
+}) {
   return (
-    <div
-      className={`pip ${small ? 'pip-small' : ''} ${happy ? 'pip-happy' : ''}`}
-      aria-hidden="true"
-    >
-      <div className="pip-leaf leaf-one" />
-      <div className="pip-leaf leaf-two" />
-      <div className="pip-body">
-        <span className="pip-eye eye-left" />
-        <span className="pip-eye eye-right" />
-        <span className="pip-cheek cheek-left" />
-        <span className="pip-cheek cheek-right" />
-        <span className="pip-mouth" />
-      </div>
-      <div className="pip-foot foot-left" />
-      <div className="pip-foot foot-right" />
+    <div className={`pip ${small ? 'pip-small' : ''}`} aria-hidden="true">
+      <Fox pose={happy ? 'waving' : 'idle'} appearance={appearance} />
     </div>
   );
 }
@@ -108,29 +104,28 @@ export function Empty({
     </div>
   );
 }
-export function PetWindow() {
-  useEffect(() => {
-    document.body.classList.add('pet-mode');
-    return () => document.body.classList.remove('pet-mode');
-  }, []);
+
+export function SettingToggle({
+  label,
+  detail,
+  checked,
+  onChange,
+}: {
+  label: string;
+  detail: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <main className="desktop-pet">
-      <div className="pet-drag" title="Drag me somewhere comfy">
-        <span>your little research buddy</span>
-      </div>
-      <button
-        className="pet-open"
-        aria-label="Open Research Buddy"
-        onClick={() => window.buddy?.call('showWorkspace')}
-      >
-        <Pip happy />
-      </button>
-      <div className="pet-controls">
-        <button onClick={() => window.buddy?.call('showWorkspace')}>Let’s think together</button>
-        <button aria-label="Hide companion" onClick={() => window.buddy?.call('hidePet')}>
-          <X size={13} />
-        </button>
-      </div>
-    </main>
+    <label className="setting-toggle">
+      <span>
+        <strong>{label}</strong>
+        <small>{detail}</small>
+      </span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className={`toggle-track ${checked ? 'on' : ''}`} aria-hidden="true">
+        <span />
+      </span>
+    </label>
   );
 }

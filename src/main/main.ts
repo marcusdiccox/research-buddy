@@ -18,6 +18,7 @@ import { summarize, answerFromNotes } from '../core/research.js';
 import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
 import { deliverDueReminders } from '../core/notifications.js';
+import { CompanionController } from './companion.js';
 import type { NoteDraft, JournalDraft, ReminderDraft, Settings } from '../shared/contracts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,7 @@ if (process.env.RESEARCH_BUDDY_DATA_DIR)
 app.setName('Research Buddy');
 app.setAppUserModelId('com.researchbuddy.desktop');
 let workspace: BrowserWindow | undefined,
-  pet: BrowserWindow | undefined,
+  companion: CompanionController | undefined,
   tray: Tray | undefined,
   db: BuddyStore,
   quitting = false;
@@ -45,6 +46,7 @@ function baseWindow(options: Electron.BrowserWindowConstructorOptions) {
     icon: iconPath,
     ...options,
     webPreferences: {
+      ...options.webPreferences,
       preload: join(here, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
@@ -61,59 +63,6 @@ function baseWindow(options: Electron.BrowserWindowConstructorOptions) {
 }
 function load(win: BrowserWindow, hash = '') {
   return win.loadFile(join(here, '../../dist/index.html'), { hash });
-}
-function clampPet() {
-  if (!pet) return;
-  const bounds = pet.getBounds(),
-    displays = screen.getAllDisplays();
-  if (
-    !displays.some(
-      (d) =>
-        bounds.x >= d.workArea.x &&
-        bounds.y >= d.workArea.y &&
-        bounds.x + bounds.width <= d.workArea.x + d.workArea.width &&
-        bounds.y + bounds.height <= d.workArea.y + d.workArea.height,
-    )
-  ) {
-    const area = screen.getPrimaryDisplay().workArea;
-    pet.setPosition(
-      area.x + area.width - bounds.width - 24,
-      area.y + area.height - bounds.height - 24,
-    );
-  }
-}
-function ensurePet() {
-  if (pet && !pet.isDestroyed()) {
-    if (!testMode) pet.showInactive();
-    return;
-  }
-  const settings = db.settings(),
-    area = screen.getPrimaryDisplay().workArea;
-  pet = baseWindow({
-    width: 200,
-    height: 208,
-    x: settings.petX ?? area.x + area.width - 224,
-    y: settings.petY ?? area.y + area.height - 232,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    skipTaskbar: true,
-    alwaysOnTop: settings.alwaysOnTop,
-    show: false,
-    hasShadow: false,
-  });
-  pet.setMenuBarVisibility(false);
-  load(pet, 'pet');
-  clampPet();
-  pet.once('ready-to-show', () => {
-    if (!testMode) pet?.showInactive();
-  });
-  pet.on('moved', () => {
-    if (pet && !pet.isDestroyed()) {
-      const [petX, petY] = pet.getPosition();
-      db.saveSettings({ petX, petY });
-    }
-  });
 }
 function notifyDue() {
   if (!db || !db.settings().notifications || !Notification.isSupported() || testMode) return;
@@ -163,19 +112,26 @@ else {
         }
       });
       await load(workspace);
-      if (!testMode) workspace.show();
-      if (db.settings().petVisible) ensurePet();
+      companion = new CompanionController({
+        store: db,
+        createWindow: baseWindow,
+        loadWindow: load,
+        openNotebook: (action) => {
+          showWorkspace();
+          workspace?.webContents.send('buddy:navigate', action);
+        },
+        onChange: changed,
+        autoShow: !testMode,
+      });
       tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 }));
       tray.setToolTip('Research Buddy');
       tray.setContextMenu(
         Menu.buildFromTemplate([
           { label: 'Open Research Buddy', click: showWorkspace },
           {
-            label: 'Show companion',
+            label: 'Show / hide Pip',
             click: () => {
-              db.saveSettings({ petVisible: true });
-              ensurePet();
-              changed();
+              companion?.toggle();
             },
           },
           { type: 'separator' },
@@ -189,8 +145,8 @@ else {
         ]),
       );
       tray.on('double-click', showWorkspace);
-      screen.on('display-removed', clampPet);
-      screen.on('display-metrics-changed', clampPet);
+      screen.on('display-removed', () => companion?.clamp());
+      screen.on('display-metrics-changed', () => companion?.clamp());
       setInterval(notifyDue, 15000).unref();
       setTimeout(notifyDue, 1500).unref();
     })
@@ -201,15 +157,21 @@ else {
 }
 app.on('before-quit', () => {
   quitting = true;
+  companion?.dispose();
 });
 app.on('will-quit', () => {
+  companion?.dispose();
   db?.close();
 });
 app.on('activate', showWorkspace);
 
 ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
-  if (!sender || ![workspace, pet].includes(sender) || event.senderFrame !== event.sender.mainFrame)
+  if (
+    !sender ||
+    ![workspace, companion?.window].includes(sender) ||
+    event.senderFrame !== event.sender.mainFrame
+  )
     return { ok: false, error: 'This action is not available.' };
   try {
     if (typeof action !== 'string') throw new Error('Choose an available action.');
@@ -222,7 +184,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
     let value: unknown;
     switch (action) {
       case 'snapshot':
-        value = db.snapshot();
+        value = { ...db.snapshot(), companion: companion?.status };
         break;
       case 'createProject':
         value = db.createProject({
@@ -324,10 +286,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       }
       case 'settings': {
         value = db.saveSettings(data as Partial<Settings>);
-        const s = db.settings();
-        if (s.petVisible) ensurePet();
-        else pet?.hide();
-        pet?.setAlwaysOnTop(s.alwaysOnTop);
+        companion?.configure();
         break;
       }
       case 'showWorkspace':
@@ -335,15 +294,36 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         value = true;
         break;
       case 'showPet':
-        db.saveSettings({ petVisible: true });
-        ensurePet();
+        companion?.show();
         value = true;
         break;
       case 'hidePet':
-        db.saveSettings({ petVisible: false });
-        pet?.hide();
+        companion?.hide();
         value = true;
         break;
+      case 'togglePet':
+        companion?.toggle();
+        value = true;
+        break;
+      case 'petState':
+        value = companion?.view;
+        break;
+      case 'petAction':
+        companion?.act(data.action);
+        value = true;
+        break;
+      case 'petRegions':
+      case 'petSystemMotion':
+      case 'petDrag': {
+        if (sender !== companion?.window) throw new Error('This action is only available to Pip.');
+        if (action === 'petRegions') companion.setRegions(data.regions);
+        else if (action === 'petSystemMotion') companion.setSystemReduced(data.reduced);
+        else if (typeof data.dragging !== 'boolean') throw new Error('Invalid drag state.');
+        else if (data.dragging) companion.startDrag();
+        else companion.endDrag();
+        value = true;
+        break;
+      }
       case 'seedDemo': {
         const existing = db.snapshot().projects.find((p) => p.name === 'Aster Devices');
         if (existing) {
@@ -369,7 +349,20 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       default:
         throw new Error('That action is not available.');
     }
-    if (!['snapshot', 'revision', 'calendarPreview', 'importFile'].includes(action)) changed();
+    if (
+      ![
+        'snapshot',
+        'revision',
+        'calendarPreview',
+        'importFile',
+        'petState',
+        'petRegions',
+        'petDrag',
+        'petSystemMotion',
+        'petAction',
+      ].includes(action)
+    )
+      changed();
     return { ok: true, value };
   } catch (error) {
     return {

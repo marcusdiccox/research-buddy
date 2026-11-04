@@ -59,7 +59,15 @@ export interface JournalEntry {
   evidence: Citation[];
   createdAt: string;
 }
-export interface Settings {
+export interface PetPreferences {
+  petAppearance: 'red' | 'arctic' | 'midnight';
+  petRoamArea: 'bottom' | 'desktop' | 'parked';
+  petJokeStyle: 'wholesome' | 'dad' | 'nerdy';
+  petChatter: 'off' | 'quiet' | 'friendly' | 'chatty';
+  petReducedMotion: boolean;
+  petShortcut: 'Control+Alt+P' | 'Control+Shift+Space' | 'Alt+Shift+P';
+}
+export interface Settings extends PetPreferences {
   petVisible: boolean;
   alwaysOnTop: boolean;
   petX?: number;
@@ -75,7 +83,33 @@ export interface Snapshot {
   results: ResearchResult[];
   settings: Settings;
   hasApiKey: boolean;
+  companion?: { shortcutAvailable: boolean; activeShortcut: string | null };
 }
+export interface PetView {
+  pose:
+    | 'idle'
+    | 'walking'
+    | 'waving'
+    | 'sleeping'
+    | 'standing-up'
+    | 'sitting-down'
+    | 'curling-up'
+    | 'waking-up';
+  direction: 1 | -1;
+  phrase: string | null;
+  preferences: PetPreferences;
+  shortcutAvailable: boolean;
+  activeShortcut: string | null;
+  menuOpen: boolean;
+}
+export interface HitRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  shape: 'rect' | 'ellipse';
+}
+export type NotebookAction = 'notes' | 'reminder' | 'settings';
 export interface NoteDraft {
   id?: string;
   projectId: string;
@@ -103,6 +137,8 @@ export interface JournalDraft {
 export interface BuddyAPI {
   call<T = unknown>(action: string, data?: unknown): Promise<T>;
   onChange(handler: () => void): () => void;
+  onPetState(handler: (state: PetView) => void): () => void;
+  onNavigate(handler: (action: NotebookAction) => void): () => void;
 }
 declare global {
   interface Window {

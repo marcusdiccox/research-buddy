@@ -1,0 +1,315 @@
+.fox {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  position: relative;
+}
+.fox-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: 400% 400%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  background-position: 0 0;
+  animation: fox-idle 5s step-end infinite;
+}
+/* Atlas faces left. Mirror the entire frame, never the speech/menu surfaces. */
+.fox-facing-right {
+  transform: scaleX(-1);
+}
+.fox-walking .fox-sprite {
+  background-position-y: 33.333333%;
+  animation: fox-cycle 0.72s steps(4) infinite;
+}
+.fox-waving .fox-sprite {
+  background-position-y: 66.666667%;
+  animation: fox-cycle 0.8s steps(4) infinite;
+}
+.fox-sleeping .fox-sprite {
+  background-position-y: 100%;
+  animation: fox-cycle 4s steps(4) infinite;
+}
+@keyframes fox-cycle {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: 133.333333%;
+  }
+}
+@keyframes fox-idle {
+  0%,
+  78%,
+  100% {
+    background-position-x: 0%;
+  }
+  82% {
+    background-position-x: 33.333333%;
+  }
+  86% {
+    background-position-x: 66.666667%;
+  }
+  90% {
+    background-position-x: 100%;
+  }
+}
+.fox-standing-up .fox-sprite {
+  background-position-y: 0%;
+  animation: fox-transition 0.65s steps(3) forwards;
+}
+.fox-sitting-down .fox-sprite {
+  background-position-y: 33.333333%;
+  animation: fox-transition 0.55s steps(3) forwards;
+}
+.fox-curling-up .fox-sprite {
+  background-position-y: 66.666667%;
+  animation: fox-transition 0.9s steps(3) forwards;
+}
+.fox-waking-up .fox-sprite {
+  background-position-y: 100%;
+  animation: fox-transition 1.1s steps(3) forwards;
+}
+@keyframes fox-transition {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: 100%;
+  }
+}
+html.pet-mode,
+html.pet-mode body,
+html.pet-mode #root {
+  margin: 0 !important;
+  width: 240px !important;
+  height: 260px !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+.desktop-fox {
+  position: relative;
+  width: 240px;
+  height: 260px;
+  background: transparent !important;
+  user-select: none;
+  color: #4e5147;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.fox-pet-button {
+  position: absolute;
+  bottom: 8px;
+  left: 68px;
+  width: 104px;
+  height: 104px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  -webkit-app-region: no-drag;
+}
+.fox-pet-button:active {
+  cursor: grabbing;
+}
+.fox-pet-button:focus-visible {
+  outline: 2px dashed #9b734f;
+  outline-offset: 1px;
+}
+.fox-pet-button .fox {
+  pointer-events: none;
+}
+.fox-bubble {
+  position: absolute;
+  bottom: 119px;
+  left: 10px;
+  width: 220px;
+  max-height: 106px;
+  background: #fffdf5;
+  border: 1px solid #d6c3a8;
+  border-radius: 16px 16px 16px 5px;
+  box-shadow: 0 3px 8px #30251c13;
+  padding: 11px 25px 11px 13px;
+  z-index: 2;
+}
+.fox-bubble p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  color: #5c574a;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-height: 78px;
+  overflow: hidden;
+}
+.fox-bubble > button {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: #78684f;
+  border-radius: 50%;
+}
+.fox-bubble > button:hover {
+  background: #f3e7d4;
+}
+.fox-bubble-tip {
+  position: absolute;
+  bottom: -7px;
+  left: 90px;
+  width: 12px;
+  height: 12px;
+  background: #fffdf5;
+  border-right: 1px solid #d6c3a8;
+  border-bottom: 1px solid #d6c3a8;
+  transform: rotate(45deg);
+}
+.fox-menu {
+  position: absolute;
+  bottom: 5px;
+  left: 10px;
+  width: 220px;
+  background: #fffcf5;
+  border: 1px solid #d7c5ac;
+  box-shadow: 0 5px 15px #46301c20;
+  border-radius: 13px;
+  padding: 7px;
+  z-index: 4;
+}
+.fox-menu-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  color: #7b5c42;
+  padding: 6px 4px 9px;
+  border-bottom: 1px solid #eee3d3;
+  margin-bottom: 4px;
+}
+.fox-menu-title > button {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  color: #79654e;
+}
+.fox-menu > [role='menuitem'] {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  height: 30px;
+  padding: 6px 7px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 12px;
+  color: #5b5c4d;
+  white-space: nowrap;
+}
+.fox-menu > [role='menuitem']:hover,
+.fox-menu > [role='menuitem']:focus-visible {
+  background: #f1e7d5;
+  outline: none;
+}
+.fox-menu kbd {
+  margin-left: auto;
+  font-size: 8px;
+  color: #7f7057;
+  font-family: inherit;
+  letter-spacing: -0.3px;
+}
+.motion-reduced .fox * {
+  animation: none !important;
+  transition: none !important;
+}
+.fox-preview {
+  width: 90px;
+  height: 88px;
+  flex-shrink: 0;
+}
+.fox-preview .fox {
+  animation: none;
+}
+.fox-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #64704f;
+  background: #f6f4e9;
+  border: 1px solid #e6decd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 14px;
+}
+.fox-shortcut kbd {
+  background: #fffdf6;
+  border: 1px solid #cfcbb9;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 5px 7px;
+  font-family: inherit;
+  font-size: 11px;
+  color: #6b5742;
+}
+.fox-settings-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+  margin-top: 20px;
+}
+.fox-settings-choices label {
+  font-size: 12px;
+}
+.fox-settings-choices select {
+  font-size: 13px;
+}
+.fox-choice-description {
+  font-size: 11px !important;
+  color: #69765c !important;
+  line-height: 1.7 !important;
+}
+.fox-settings-preview {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+}
+.fox-settings-preview p {
+  font-size: 11px;
+  color: #6f775e;
+  margin: 0;
+}
+.shortcut-unavailable {
+  font-size: 12px;
+  color: #875d3c;
+  background: #fbefdf;
+  border-radius: 7px;
+  padding: 12px;
+  line-height: 1.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fox * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.fox-settings-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 24px 0 0;
+  min-width: 0;
+}
+.fox-settings-fieldset:disabled {
+  opacity: 0.75;
+}
+.fox-settings-card {
+  grid-row: span 2;
+}

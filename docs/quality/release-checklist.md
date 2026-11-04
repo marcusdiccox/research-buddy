@@ -35,3 +35,14 @@ Packaged hidden-window screenshots were omitted because Chromium capture timed o
 ## Review decisions
 
 Hosted AI and OAuth sync from the broader proposal remain deferred; the current interface uses honest local-processing and event-draft descriptions. Native toast delivery, signed-in calendar saving, and clean-machine installation remain environment-specific checks as described above. These limits must not be presented as verified behavior on another computer.
+
+## Fox update0.2 � 2026-11-04
+
+-24 backend tests and TypeScript build pass;12 desktop journeys pass against `release-fox-final/win-unpacked/Research Buddy.exe`.
+
+- Generated reference-inspired pixel atlases cover four base poses and four transition sequences. All skins inspected and ground baselines verified. Normal native launch visually confirmed on this computer.
+- Packaged archive integrity verified for4,737 files. Installer: `release-fox-final/Research Buddy Setup0.2.0.exe` (128,182,827 bytes).
+- Installer SHA-256: `D1FD03481D219672D464E818AEFC0D1B72793FF8D8DEB912AAF23C0040E88A81`.
+- Automatic sleep after120s without fox interaction; real mouse click preserves the wake/stretch transition. No manual sleep menu item.
+- Background throttling is disabled only while the companion is visible, so it continues painting while another app has focus. Hidden work is stopped/throttled.
+- Existing unsigned/clean-machine/environmental limits still apply.

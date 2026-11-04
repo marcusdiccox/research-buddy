@@ -35,7 +35,8 @@ import type {
   Citation,
   Settings,
 } from '../shared/contracts';
-import { Pip, Modal, Empty } from './components';
+import { Pip, Modal, Empty, SettingToggle } from './components';
+import { FoxSettings } from './FoxSettings';
 
 type View = 'notes' | 'ask' | 'reminders' | 'journal' | 'settings';
 type Dialog =
@@ -100,6 +101,25 @@ export default function App() {
     const timer = setTimeout(() => setToast(null), toast.error ? 12000 : 6500);
     return () => clearTimeout(timer);
   }, [toast]);
+  useEffect(
+    () =>
+      window.buddy?.onNavigate((action) => {
+        if (dialog) {
+          if (action !== 'notes')
+            setToast({ text: 'Finish or close your open form first. Pip will be right here.' });
+          return;
+        }
+        setSelected(null);
+        setQuery('');
+        setResult(null);
+        if (action === 'settings') setView('settings');
+        else if (action === 'reminder') {
+          setView('reminders');
+          setDialog({ kind: 'reminder' });
+        } else setView('notes');
+      }),
+    [dialog],
+  );
   const closeDialog = useCallback(() => setDialog(null), []);
   async function run<T>(action: string, payload?: unknown, message?: string): Promise<T | null> {
     if (busy) return null;
@@ -158,6 +178,15 @@ export default function App() {
   }
   async function toggleSetting(key: keyof Settings, value: boolean) {
     await run('settings', { [key]: value });
+  }
+  function changeFoxSettings(patch: Partial<Settings>) {
+    if (busy) return;
+    setData((current) =>
+      current ? { ...current, settings: { ...current.settings, ...patch } } : current,
+    );
+    void run('settings', patch).then((result) => {
+      if (result === null) void refresh().catch(() => {});
+    });
   }
   async function demo() {
     const p = await run<Project>(
@@ -322,7 +351,7 @@ export default function App() {
                   <span className="spark star-one">✧</span>
                   <span className="spark star-two">✧</span>
                   <div className="art-orbit" />
-                  <Pip happy />
+                  <Pip happy appearance={data.settings.petAppearance} />
                   <div className="pip-caption">Hi, I’m Pip. Let’s make sense of it.</div>
                   <span className="art-flower">✳</span>
                 </div>
@@ -826,32 +855,12 @@ export default function App() {
                 description="A few simple things to help Research Buddy fit into your day."
               />
               <div className="settings-grid">
-                <section className="settings-card">
-                  <h2>
-                    <Sprout size={19} />
-                    Your little companion
-                  </h2>
-                  <SettingToggle
-                    label="Show Pip on my desktop"
-                    detail="A small friend. Click Pip to open your research."
-                    checked={data.settings.petVisible}
-                    onChange={(v) => toggleSetting('petVisible', v)}
-                  />
-                  <SettingToggle
-                    label="Keep Pip above other windows"
-                    detail="Your notebook stays a regular window."
-                    checked={data.settings.alwaysOnTop}
-                    onChange={(v) => toggleSetting('alwaysOnTop', v)}
-                  />
-                  <div className="settings-pip">
-                    <Pip small />
-                    <p>
-                      Drag Pip by the little label above their head.
-                      <br />
-                      You can hide them anytime.
-                    </p>
-                  </div>
-                </section>
+                <FoxSettings
+                  settings={data.settings}
+                  runtime={data.companion}
+                  busy={!!busy}
+                  onChange={changeFoxSettings}
+                />
                 <section className="settings-card">
                   <h2>
                     <Bell size={19} />
@@ -912,7 +921,7 @@ export default function App() {
                     Local files aren’t encrypted. Imported notes aren’t live market data. Quick
                     summary selects key passages; it doesn’t replace reading the full source.
                   </p>
-                  <span className="version">RESEARCH BUDDY · EARLY ACCESS 0.1</span>
+                  <span className="version">RESEARCH BUDDY · EARLY ACCESS 0.2</span>
                 </section>
               </div>
             </>
@@ -1377,29 +1386,5 @@ function JournalForm({
       </label>
       <FormActions busy={busy} onCancel={onCancel} label="Save journal entry" />
     </form>
-  );
-}
-function SettingToggle({
-  label,
-  detail,
-  checked,
-  onChange,
-}: {
-  label: string;
-  detail: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="setting-toggle">
-      <span>
-        <strong>{label}</strong>
-        <small>{detail}</small>
-      </span>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
-      <span className={`toggle-track ${checked ? 'on' : ''}`} aria-hidden="true">
-        <span />
-      </span>
-    </label>
   );
 }

@@ -19,6 +19,12 @@ const actions = new Set([
   'showWorkspace',
   'showPet',
   'hidePet',
+  'togglePet',
+  'petState',
+  'petAction',
+  'petRegions',
+  'petDrag',
+  'petSystemMotion',
   'seedDemo',
 ]);
 contextBridge.exposeInMainWorld('buddy', {
@@ -32,5 +38,15 @@ contextBridge.exposeInMainWorld('buddy', {
     const listener = () => handler();
     ipcRenderer.on('buddy:changed', listener);
     return () => ipcRenderer.removeListener('buddy:changed', listener);
+  },
+  onPetState(handler: (state: unknown) => void) {
+    const listener = (_event: unknown, state: unknown) => handler(state);
+    ipcRenderer.on('pet:state', listener);
+    return () => ipcRenderer.removeListener('pet:state', listener);
+  },
+  onNavigate(handler: (action: unknown) => void) {
+    const listener = (_event: unknown, action: unknown) => handler(action);
+    ipcRenderer.on('buddy:navigate', listener);
+    return () => ipcRenderer.removeListener('buddy:navigate', listener);
   },
 });

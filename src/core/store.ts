@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID, createHash } from 'node:crypto';
+import { defaultPetPreferences } from './pet.js';
 import type {
   Project,
   Note,
@@ -14,6 +15,7 @@ import type {
 } from '../shared/contracts.js';
 
 const defaults: Settings = {
+  ...defaultPetPreferences,
   petVisible: true,
   alwaysOnTop: true,
   notifications: true,
@@ -92,11 +94,30 @@ export class BuddyStore {
     return { ...defaults, ...rows[0] };
   }
   saveSettings(patch: Partial<Settings>): Settings {
+    const choices: Record<string, readonly string[]> = {
+      petAppearance: ['red', 'arctic', 'midnight'],
+      petRoamArea: ['bottom', 'desktop', 'parked'],
+      petJokeStyle: ['wholesome', 'dad', 'nerdy'],
+      petChatter: ['off', 'quiet', 'friendly', 'chatty'],
+      petShortcut: ['Control+Alt+P', 'Control+Shift+Space', 'Alt+Shift+P'],
+    };
+    for (const [key, values] of Object.entries(choices)) {
+      if (key in patch && !values.includes(String(patch[key as keyof Settings])))
+        throw new Error('Choose one of the available companion settings.');
+    }
     const allowed = Object.fromEntries(
       Object.entries(patch).filter(([key, value]) =>
-        ['petVisible', 'alwaysOnTop', 'notifications', 'providerConsent'].includes(key)
-          ? typeof value === 'boolean'
-          : ['petX', 'petY'].includes(key) && typeof value === 'number' && Number.isFinite(value),
+        choices[key]
+          ? typeof value === 'string'
+          : [
+                'petVisible',
+                'alwaysOnTop',
+                'notifications',
+                'providerConsent',
+                'petReducedMotion',
+              ].includes(key)
+            ? typeof value === 'boolean'
+            : ['petX', 'petY'].includes(key) && typeof value === 'number' && Number.isFinite(value),
       ),
     );
     const settings = { ...this.settings(), ...allowed };
