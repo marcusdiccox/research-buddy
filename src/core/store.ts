@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomUUID, createHash } from 'node:crypto';
 import { defaultPetPreferences } from './pet.js';
 import { REMINDER_LEAD_MINUTES } from './reminder-policy.js';
+import { nextRecurringDueAt, validRecurrenceAnchorDay, validRepeatRule } from './recurrence.js';
 import type {
   Project,
   Note,
@@ -384,17 +385,35 @@ export class BuddyStore {
       input.durationMinutes > 1440
     )
       throw new Error('Choose an event length between 5 minutes and 24 hours.');
+    const dueAt = validDate(input.dueAt);
+    const recurrence =
+      input.recurrence === undefined ? old?.recurrence : validRepeatRule(input.recurrence);
+    if (input.recurrenceAnchorDay !== undefined)
+      validRecurrenceAnchorDay(input.recurrenceAnchorDay);
+    // The anchor belongs to the schedule, not to a clamped February occurrence.
+    // Only a new local calendar date establishes a new anchor. Time edits and
+    // editors rounding snooze seconds must preserve the original monthly day.
+    const sameLocalDate =
+      old && new Date(old.dueAt).toDateString() === new Date(dueAt).toDateString();
+    const recurrenceAnchorDay =
+      recurrence === 'monthly'
+        ? old?.recurrence === 'monthly' && sameLocalDate
+          ? (old.recurrenceAnchorDay ?? new Date(old.dueAt).getDate())
+          : new Date(dueAt).getDate()
+        : undefined;
     const r: Reminder = {
       id: old?.id ?? randomUUID(),
       projectId: input.projectId ?? '',
       title: text(input.title, 'Reminder title', 200),
       details: text(input.details ?? '', 'Reminder details', 5000, true),
-      dueAt: validDate(input.dueAt),
+      dueAt,
       durationMinutes: input.durationMinutes,
       completed: old?.completed ?? false,
       calendarSync:
         typeof input.calendarSync === 'boolean' ? input.calendarSync : (old?.calendarSync ?? false),
       remindEnabled: input.remindEnabled ?? old?.remindEnabled ?? true,
+      recurrence,
+      recurrenceAnchorDay,
       notifiedAt: old?.notifiedAt ?? null,
       notificationAttemptAt: old?.notificationAttemptAt,
       notificationRetryAt: old?.notificationRetryAt,
@@ -416,9 +435,14 @@ export class BuddyStore {
   completeReminder(id: string, completed: boolean) {
     if (typeof completed !== 'boolean') throw new Error('Invalid reminder state.');
     const r = this.getReminder(id);
-    r.completed = completed;
+    const advances = completed && r.recurrence !== undefined && r.recurrence !== 'none';
+    if (advances) {
+      if (r.recurrence === 'monthly') r.recurrenceAnchorDay ??= new Date(r.dueAt).getDate();
+      r.dueAt = nextRecurringDueAt(r.dueAt, r.recurrence!, new Date(), r.recurrenceAnchorDay);
+    }
+    r.completed = advances ? false : completed;
     return this.transaction(() => {
-      this.cancelReminderAttempts(r, false);
+      this.cancelReminderAttempts(r, advances);
       if (!completed) r.notifiedAt = null;
       this.put('reminder', r);
       return r;
@@ -428,6 +452,9 @@ export class BuddyStore {
     const r = this.getReminder(id);
     const nextDueAt = validDate(dueAt);
     const changed = r.dueAt !== nextDueAt;
+    // Snooze shifts the current occurrence and its wall time/cadence. Monthly
+    // routines retain the original day anchor, including when snoozed in February.
+    if (r.recurrence === 'monthly') r.recurrenceAnchorDay ??= new Date(r.dueAt).getDate();
     r.dueAt = nextDueAt;
     r.completed = false;
     return this.transaction(() => {

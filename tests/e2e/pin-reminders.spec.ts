@@ -32,7 +32,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 const focusAway = () =>
   app.evaluate(({ BrowserWindow }) => {
@@ -81,7 +81,7 @@ test('one Remind checkbox persists without a lead-time selector', async () => {
     async () => (await window.buddy!.call<any>('snapshot')).reminders,
   );
   expect(reminders[0].remindEnabled).toBe(false);
-  await expect(bubble.getByRole('combobox')).toHaveCount(0);
+  await expect(bubble.getByRole('combobox', { name: 'Repeat', exact: true })).toHaveCount(1);
 });
 
 test('upcoming reminders reach Pip and the editor without replacing the draft', async () => {

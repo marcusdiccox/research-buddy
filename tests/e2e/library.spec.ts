@@ -54,7 +54,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 test('saved items are searchable, grouped across kinds, deleted and restored', async () => {
   await expect(pad.getByRole('heading', { name: 'Saved items', exact: true })).toBeVisible();

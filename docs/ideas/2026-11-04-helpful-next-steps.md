@@ -1,5 +1,7 @@
 # Possible next additions for Pip
 
+Update November 5: natural dates, repeating reminders and quiet focus are now implemented in 0.7. Automatic backups remain a proposal. The original research below records the earlier planning context.
+
 Researched November 4, 2026. These are proposals only; none is implemented by the calendar/library update. Ranking reflects my judgment about this small local desktop companion, not a claim that a feature improves everyone's productivity.
 
 1. **Natural-language dates.** Type “tomorrow at 3pm” or “next Friday” and let Pip preview the exact local date before saving. This would reduce fiddling while preserving the new calendar as a fallback. Todoist's official Quick Add documentation demonstrates these phrases; Pip would need its own small local parser and explicit ambiguity handling. Effort: medium. [Todoist Quick Add](https://developer.todoist.com/api/v1/).

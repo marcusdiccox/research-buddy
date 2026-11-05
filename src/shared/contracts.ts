@@ -1,3 +1,9 @@
+export type RepeatRule = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly';
+export interface FocusStatus {
+  active: boolean;
+  endsAt: string | null;
+  remainingSeconds: number;
+}
 export interface Project {
   id: string;
   name: string;
@@ -50,6 +56,8 @@ export interface Reminder {
   createdAt: string;
   calendarSync?: boolean;
   remindEnabled?: boolean;
+  recurrence?: RepeatRule;
+  recurrenceAnchorDay?: number;
 }
 export interface ReminderAlert {
   reminder: Reminder;
@@ -122,6 +130,7 @@ export interface LibrarySnapshot {
   trash: { notes: Note[]; reminders: Reminder[] };
 }
 export interface Snapshot {
+  focus?: FocusStatus;
   library: LibrarySnapshot;
   projects: Project[];
   notes: Note[];
@@ -181,6 +190,8 @@ export interface ReminderDraft {
   durationMinutes: number;
   calendarSync?: boolean;
   remindEnabled?: boolean;
+  recurrence?: RepeatRule;
+  recurrenceAnchorDay?: number;
 }
 export interface JournalDraft {
   entryId?: string;

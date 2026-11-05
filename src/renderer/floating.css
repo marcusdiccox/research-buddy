@@ -307,3 +307,23 @@ html.floating-mode #root {
   margin: 0;
   accent-color: #4d7154;
 }
+
+.quick-bubble .repeat-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin: 0;
+  color: #53664c;
+}
+.quick-bubble .repeat-field select {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  min-height: 26px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 6px;
+  background: #fafbf4;
+}

@@ -2,7 +2,7 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · calendar and saved library update 0.6.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · routines update 0.7.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
@@ -10,7 +10,7 @@
 
 Download the Windows installer from the latest successful run in [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
-For the local update, open **`release-pip-library/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+For the local update, open **`release-pip-routines/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
 1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Saved** opens searchable notes and reminders, with groups and recoverable Trash. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
@@ -30,6 +30,12 @@ Use the small notepad’s Settings button, or right-click Pip → **Fox settings
 - Reduced motion and your preferred show/hide shortcut.
 
 Pip is smaller now: an 80px control, random 25–180px trips at 12–24px/s, with 3½–7s rests. It chooses a fresh direction each trip and turns away near the screen edges. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake. Its 97 lines are shuffled within each theme without repeats until the pool is exhausted. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
+
+## Routines
+
+- **Repeating reminders:** None, Daily, Weekdays, Weekly or Monthly. Mark done advances the same reminder to its next future local occurrence, retaining the five warning checkpoints. Monthly dates clamp short months and retain the original day. A nonexistent DST time is skipped. Google sync updates the same event to its next occurrence; it does not create a Google recurring series.
+- **Quiet focus:** start 15, 25 or 45 minutes from Notes or the notebook. Pip settles and pauses casual speech; event reminders continue. Stop anytime. Quitting ends the session.
+- **Natural dates:** open the date picker and type “tomorrow at 3pm”, “next Friday at 09:00” or “in 30 minutes”. Preview, Use date, then Done. Explicit am/pm or 24-hour time avoids ambiguity. Parsing stays local; unsupported input gives feedback.
 
 ## What works
 
@@ -52,7 +58,7 @@ All note processing in this build happens on your device. No research is sent to
 
 Data is saved in an ordinary, unencrypted SQLite file in Electron's user-data directory, normally `%APPDATA%/Research Buddy/research.sqlite`. Exported Markdown is also plaintext. Keep sensitive research on a trusted computer.
 
-Imports support up to 2 MiB and 100,000 Unicode code points. Publication dates are optional and separate from save dates. The app does not fetch source URLs or provide live prices. PDF/OCR, permanent erasure/workspace deletion, cloud sync, recurring reminders, and full backup/restore are not included yet.
+Imports support up to 2 MiB and 100,000 Unicode code points. Publication dates are optional and separate from save dates. The app does not fetch source URLs or provide live prices. PDF/OCR, permanent erasure/workspace deletion, cloud sync and full backup/restore are not included yet.
 
 ## Develop
 

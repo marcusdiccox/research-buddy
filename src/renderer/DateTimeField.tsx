@@ -9,6 +9,7 @@ import {
   shiftCalendarMonth,
   toLocalDateTime,
 } from '../core/date-time';
+import { parseNaturalDate, type NaturalDateResult } from '../core/natural-date';
 import './date-time.css';
 
 export interface DateTimeFieldProps {
@@ -48,6 +49,9 @@ export function DateTimeField({
   const [focusedDate, setFocusedDate] = useState('');
   const [month, setMonth] = useState('');
   const [error, setError] = useState('');
+  const [naturalText, setNaturalText] = useState('');
+  const [naturalPreview, setNaturalPreview] = useState<NaturalDateResult | null>(null);
+  const [naturalApplied, setNaturalApplied] = useState(false);
   const today = toLocalDateTime(new Date()).slice(0, 10);
   const days = buildMonthGrid(month);
 
@@ -59,6 +63,9 @@ export function DateTimeField({
     setFocusedDate(initial.slice(0, 10));
     setMonth(initial.slice(0, 7));
     setError('');
+    setNaturalText('');
+    setNaturalPreview(null);
+    setNaturalApplied(false);
     focusDay.current = true;
     setOpen(true);
   }
@@ -95,6 +102,20 @@ export function DateTimeField({
     setFocusedDate(date);
     setMonth(date.slice(0, 7));
     setError('');
+    setNaturalPreview(null);
+    setNaturalApplied(false);
+  }
+
+  function previewDate() {
+    setNaturalApplied(false);
+    setNaturalPreview(parseNaturalDate(naturalText, { now: new Date(), defaultTime: draftTime }));
+  }
+
+  function usePreview() {
+    if (!naturalPreview?.ok) return;
+    selectDate(naturalPreview.value.slice(0, 10));
+    setDraftTime(naturalPreview.value.slice(11, 16));
+    setNaturalApplied(true);
   }
 
   function moveMonth(amount: number) {
@@ -135,7 +156,8 @@ export function DateTimeField({
         // Keep direct entry inside this picker even when it is used in an editor form.
         if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
           event.preventDefault();
-          apply();
+          if (event.target.id === `${id}-natural`) previewDate();
+          else apply();
         }
       }}
     >
@@ -146,6 +168,55 @@ export function DateTimeField({
         Use arrow keys to move days, Home and End for week edges, Page Up and Page Down for months,
         and Enter to select. Done saves; Escape cancels.
       </p>
+      <div className="date-time-natural">
+        <label htmlFor={`${id}-natural`}>Describe a date</label>
+        <div className="date-time-natural-entry">
+          <input
+            id={`${id}-natural`}
+            type="text"
+            value={naturalText}
+            placeholder="tomorrow at 3pm"
+            autoComplete="off"
+            maxLength={160}
+            aria-invalid={naturalPreview?.ok === false}
+            aria-describedby={`${id}-natural-help${naturalPreview ? ` ${id}-natural-preview` : ''}`}
+            onChange={(event) => {
+              setNaturalText(event.target.value);
+              setNaturalPreview(null);
+              setNaturalApplied(false);
+            }}
+          />
+          <button type="button" onClick={previewDate}>
+            Preview date
+          </button>
+        </div>
+        <p id={`${id}-natural-help`} className="date-time-natural-help">
+          Dates keep the selected time. “Next Friday” means next week. Use am/pm or 09:00.
+        </p>
+        {naturalPreview && (
+          <div
+            id={`${id}-natural-preview`}
+            className={naturalPreview.ok ? 'date-time-natural-preview' : 'date-time-error'}
+            role={naturalPreview.ok ? 'status' : 'alert'}
+          >
+            {naturalPreview.ok ? (
+              <>
+                <span>{formatLocalDateTime(naturalPreview.value)}</span>
+                <button type="button" onClick={usePreview}>
+                  Use date
+                </button>
+              </>
+            ) : (
+              naturalPreview.error
+            )}
+          </div>
+        )}
+        {naturalApplied && (
+          <p className="date-time-natural-help" role="status">
+            Date ready. Choose Done to save.
+          </p>
+        )}
+      </div>
       <div className="date-time-inputs">
         <label htmlFor={`${id}-date`}>
           Date
@@ -161,6 +232,8 @@ export function DateTimeField({
               const date = event.target.value;
               setDraftDate(date);
               setError('');
+              setNaturalPreview(null);
+              setNaturalApplied(false);
               if (buildMonthGrid(date.slice(0, 7)).length) {
                 setMonth(date.slice(0, 7));
                 setFocusedDate(date);
@@ -180,6 +253,8 @@ export function DateTimeField({
             onChange={(event) => {
               setDraftTime(event.target.value);
               setError('');
+              setNaturalPreview(null);
+              setNaturalApplied(false);
             }}
           />
         </label>

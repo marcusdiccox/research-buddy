@@ -1,3 +1,6 @@
+import { RepeatField } from './RepeatField';
+import { FocusTimer } from './FocusTimer';
+import type { RepeatRule } from '../shared/contracts';
 import { DateTimeField } from './DateTimeField';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { BookOpen, Bell, CalendarDays, Settings, Plus, ArrowUpRight, Save } from 'lucide-react';
@@ -31,6 +34,7 @@ type ReminderFields = {
   durationMinutes: number;
   calendarSync: boolean;
   remindEnabled: boolean;
+  recurrence: RepeatRule;
 };
 const blankNote = (): NoteFields => ({ projectId: '', title: '', body: '' });
 function localDate(value = new Date(Date.now() + 3600000).toISOString()) {
@@ -44,6 +48,7 @@ const blankReminder = (): ReminderFields => ({
   durationMinutes: 30,
   calendarSync: false,
   remindEnabled: true,
+  recurrence: 'none',
 });
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong. Please try again.';
@@ -162,6 +167,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
             durationMinutes: r.durationMinutes,
             calendarSync: !!r.calendarSync,
             remindEnabled: r.remindEnabled !== false,
+            recurrence: r.recurrence ?? 'none',
           };
         });
         setMode(item.kind === 'calendar' ? 'calendar' : 'reminders');
@@ -262,6 +268,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
               durationMinutes: saved.durationMinutes,
               calendarSync: !!saved.calendarSync,
               remindEnabled: saved.remindEnabled !== false,
+              recurrence: saved.recurrence ?? 'none',
             }
           : blankReminder()),
     );
@@ -335,12 +342,31 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
         durationMinutes: saved.durationMinutes,
         calendarSync: !!saved.calendarSync,
         remindEnabled: saved.remindEnabled !== false,
+        recurrence: saved.recurrence ?? 'none',
       };
       dirtyReminders.current.delete(reminder.id ?? '');
       dirtyReminders.current.delete(saved.id);
       setReminder(next);
       reminderDrafts.current.set(saved.id, next);
       if (!reminder.id) reminderDrafts.current.delete('');
+    }
+  }
+  async function markDone() {
+    if (!reminder.id) return;
+    const saved = await run<Reminder>(
+      'completeReminder',
+      { id: reminder.id, completed: true },
+      'Done.',
+    );
+    if (saved) {
+      const next = {
+        ...reminder,
+        dateTime: localDate(saved.dueAt),
+        recurrence: saved.recurrence ?? 'none',
+      };
+      setReminder(next);
+      reminderDrafts.current.set(saved.id, next);
+      dirtyReminders.current.delete(saved.id);
     }
   }
   const savedReminder = data?.reminders.find((item) => item.id === reminder.id);
@@ -351,7 +377,8 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
     localDate(savedReminder.dueAt) !== reminder.dateTime ||
     savedReminder.durationMinutes !== reminder.durationMinutes ||
     !!savedReminder.calendarSync !== reminder.calendarSync ||
-    (savedReminder.remindEnabled !== false) !== reminder.remindEnabled;
+    (savedReminder.remindEnabled !== false) !== reminder.remindEnabled ||
+    (savedReminder.recurrence ?? 'none') !== reminder.recurrence;
 
   return (
     <main className={`compact-shell ${libraryOpen ? 'compact-library-shell' : ''}`}>
@@ -383,6 +410,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
           </button>
         </div>
       </header>
+      {!libraryOpen && <FocusTimer />}
       {!libraryOpen && (
         <nav className="compact-tabs" role="tablist" aria-label="Notebook modes">
           {tabs.map(({ mode: id, label, icon: Icon }) => (
@@ -718,6 +746,11 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                       />
                     </label>
                   </div>
+                  <RepeatField
+                    value={reminder.recurrence}
+                    disabled={!!busy}
+                    onChange={(recurrence) => editReminder({ ...reminder, recurrence })}
+                  />
                   <label className="compact-checkbox">
                     <input
                       type="checkbox"
@@ -752,6 +785,16 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                         ? 'Calendar events are reminders, too.'
                         : 'Pip will give you a nudge.'}
                     </span>
+                    {savedReminder && !savedReminder.completed && (
+                      <button
+                        type="button"
+                        className="compact-secondary"
+                        disabled={!!busy || reminderChanged}
+                        onClick={() => void markDone()}
+                      >
+                        Mark done
+                      </button>
+                    )}
                     <button type="submit" className="compact-primary">
                       <Save size={15} />
                       {busy === 'saveReminder' ? 'Saving…' : 'Save reminder'}

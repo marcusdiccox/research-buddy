@@ -1,3 +1,5 @@
+import { RepeatField } from './RepeatField';
+import type { RepeatRule } from '../shared/contracts';
 import { DateTimeField } from './DateTimeField';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
@@ -1262,8 +1264,10 @@ function ReminderForm({
     dueAt: string;
     durationMinutes: number;
     remindEnabled: boolean;
+    recurrence: RepeatRule;
   }) => void;
 }) {
+  const [recurrence, setRecurrence] = useState<RepeatRule>(reminder?.recurrence ?? 'none');
   const [dateTime, setDateTime] = useState(() => localDate(reminder?.dueAt));
   return (
     <form
@@ -1276,6 +1280,7 @@ function ReminderForm({
           dueAt: new Date(String(f.get('dueAt'))).toISOString(),
           durationMinutes: Number(f.get('duration')),
           remindEnabled: f.get('remindEnabled') === 'on',
+          recurrence,
         });
       }}
     >
@@ -1322,6 +1327,7 @@ function ReminderForm({
           placeholder="Anything you’ll want to remember later…"
         />
       </label>
+      <RepeatField value={recurrence} onChange={setRecurrence} disabled={busy} />
       <label className="reminder-opt-in">
         <input
           name="remindEnabled"

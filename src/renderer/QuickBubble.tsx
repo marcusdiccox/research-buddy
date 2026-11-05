@@ -1,3 +1,6 @@
+import { RepeatField } from './RepeatField';
+import { FocusTimer } from './FocusTimer';
+import type { RepeatRule } from '../shared/contracts';
 import { DateTimeField } from './DateTimeField';
 import {
   useCallback,
@@ -35,6 +38,7 @@ export function QuickBubble() {
   const [mode, setMode] = useState<Mode>('notes');
   const [text, setText] = useState('');
   const [dateTime, setDateTime] = useState(nextHour);
+  const [recurrence, setRecurrence] = useState<RepeatRule>('none');
   const [remindEnabled, setRemindEnabled] = useState(true);
   const [data, setData] = useState<Snapshot | null>(null);
   const [layout, setLayout] = useState<BubbleLayout>({ tailX: 180, tailSide: 'bottom' });
@@ -98,6 +102,7 @@ export function QuickBubble() {
     if ('dueAt' in item) {
       setDateTime(localDate(new Date(item.dueAt)));
       setRemindEnabled(item.remindEnabled !== false);
+      setRecurrence(item.recurrence ?? 'none');
     }
     savedItem.current = { ...previous, fingerprint };
   }, []);
@@ -166,6 +171,7 @@ export function QuickBubble() {
       durationMinutes: existing?.durationMinutes ?? 30,
       calendarSync: mode === 'calendar',
       remindEnabled,
+      recurrence,
     });
     if (!saved?.id) throw new Error('The reminder was not saved. Try again.');
     reminderId.current = saved.id;
@@ -346,6 +352,16 @@ export function QuickBubble() {
               </label>
             )}
             {mode !== 'notes' && (
+              <RepeatField
+                value={recurrence}
+                disabled={busy}
+                onChange={(value) => {
+                  setRecurrence(value);
+                  dirty.current = true;
+                }}
+              />
+            )}
+            {mode !== 'notes' && (
               <label className="bubble-remind">
                 <input
                   type="checkbox"
@@ -384,6 +400,7 @@ export function QuickBubble() {
           >
             {(message?.error ? message.text : (reminderNotice ?? message?.text)) ?? '\u00a0'}
           </p>
+          {mode === 'notes' && <FocusTimer />}
           <footer className="bubble-footer">
             <button
               type="button"

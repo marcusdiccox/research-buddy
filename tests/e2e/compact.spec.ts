@@ -46,7 +46,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 
 test('notes persist and an unsaved draft survives switching modes and navigation', async () => {

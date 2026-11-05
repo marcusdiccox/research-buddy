@@ -19,7 +19,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 test('advanced research settings still expose notifications and export', async () => {
   const page = await app.firstWindow();

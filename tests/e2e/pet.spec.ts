@@ -31,7 +31,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 test('the native window and page are truly transparent, showing only a small fox', async () => {
   await expect(pet.getByRole('button', { name: 'Pip the fox — open notepad' })).toBeVisible();

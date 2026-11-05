@@ -51,6 +51,7 @@ export class CompanionController {
   }
   private menuOpen = false;
   private engaged = false;
+  private focusActive = false;
   private systemReduced = false;
   private regions: HitRegion[] = [{ x: 80, y: 172, width: 80, height: 80, shape: 'ellipse' }];
   private ignoring = true;
@@ -186,7 +187,7 @@ export class CompanionController {
     this.behavior.dismiss();
     this.menuOpen = false;
     const window = this.create();
-    if (entrance) {
+    if (entrance && !this.focusActive) {
       const area = screen.getDisplayMatching(window.getBounds()).workArea;
       this.behavior.enter(area, window.getBounds(), Date.now(), this.systemReduced);
       const frame = this.behavior.snapshot();
@@ -214,6 +215,14 @@ export class CompanionController {
   setEngaged(active: boolean) {
     this.engaged = active;
     this.behavior.interact(Date.now());
+  }
+  setFocusActive(active: boolean) {
+    if (this.focusActive === active) return;
+    this.focusActive = active;
+    // Keep an urgent reminder already on screen while clearing casual speech.
+    if (Date.now() >= this.reminderUntil) this.behavior.dismiss();
+    this.behavior.resume(Date.now());
+    this.publish(true);
   }
   private start() {
     if (this.timer) return;
@@ -303,7 +312,7 @@ export class CompanionController {
     const frame = this.behavior.tick(now, elapsed, area, bounds, {
       visible: true,
       hovered,
-      menuOpen: this.menuOpen || this.engaged,
+      menuOpen: this.menuOpen || this.engaged || this.focusActive,
       dragging: !!this.drag,
       reducedMotion: this.systemReduced,
     });

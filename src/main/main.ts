@@ -20,6 +20,7 @@ import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
 import { deliverScheduledReminders } from '../core/notifications.js';
 import { ReminderChannel } from '../core/reminder-channel.js';
+import { FocusSession } from '../core/focus.js';
 import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
 import { EventEmitter } from 'node:events';
 import { CompanionController } from './companion.js';
@@ -61,10 +62,27 @@ let bubbleLayout = {
 let notebookLaunch: NotebookLaunch = { action: 'notes' };
 const notices = new Set<Notification>();
 const foregroundReminders = new ReminderChannel();
+// Focus deliberately stays in memory: quitting ends the session.
+const focus = new FocusSession();
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
   if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('buddy:changed');
+}
+function focusStatus() {
+  const now = Date.now();
+  if (focus.tick(now)) {
+    companion?.setFocusActive(false);
+    if (companion?.canRemind)
+      companion.remind(
+        `focus:${now}`,
+        () => 'Focus finished. Nice work!',
+        () => {},
+        () => {},
+      );
+    changed();
+  }
+  return focus.status(now);
 }
 function showWorkspace() {
   workspace?.show();
@@ -406,6 +424,7 @@ else {
       screen.on('display-removed', () => companion?.clamp());
       screen.on('display-metrics-changed', () => companion?.clamp());
       setInterval(deliverForegroundReminders, 250).unref();
+      setInterval(focusStatus, 250).unref();
       setInterval(notifyDue, 15000).unref();
       setTimeout(notifyDue, 1500).unref();
     })
@@ -416,6 +435,7 @@ else {
 }
 app.on('before-quit', () => {
   quitting = true;
+  focus.stop();
   companion?.dispose();
   calendar?.dispose();
 });
@@ -444,7 +464,23 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
     let value: unknown;
     switch (action) {
       case 'snapshot':
-        value = { ...db.snapshot(), companion: companion?.status, calendar: calendar?.status };
+        value = {
+          ...db.snapshot(),
+          companion: companion?.status,
+          calendar: calendar?.status,
+          focus: focusStatus(),
+        };
+        break;
+      case 'focusStatus':
+        value = focusStatus();
+        break;
+      case 'focusStart':
+        value = focus.start(data.minutes);
+        companion?.setFocusActive(true);
+        break;
+      case 'focusStop':
+        value = focus.stop();
+        companion?.setFocusActive(false);
         break;
       case 'createLibraryGroup':
         value = db.createLibraryGroup(data.name as string);
@@ -721,6 +757,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
     if (
       ![
         'snapshot',
+        'focusStatus',
         'revision',
         'calendarPreview',
         'calendarStatus',

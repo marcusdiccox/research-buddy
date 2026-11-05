@@ -32,7 +32,7 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await closeTestApp(app);
-  rmSync(dir, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
 test('the writing bubble is frameless, transparent and keeps a real note when expanded', async () => {
   const native = await app.evaluate(({ BrowserWindow }) => {
