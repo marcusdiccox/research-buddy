@@ -32,6 +32,7 @@ import type {
   Settings,
   NotebookLaunch,
   NotebookAction,
+  LibraryItemRef,
 } from '../shared/contracts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -93,7 +94,7 @@ function load(win: BrowserWindow, hash = '') {
   return win.loadFile(join(here, '../../dist/index.html'), { hash });
 }
 async function showNotepad(
-  action: 'notes' | 'reminder' | 'calendar' = 'notes',
+  action: 'notes' | 'reminder' | 'calendar' | 'library' = 'notes',
   noteId?: string,
   reminderId?: string,
 ) {
@@ -217,7 +218,13 @@ async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
   changed();
 }
 function openNotepad(action: NotebookAction = 'notes') {
-  void (action === 'settings' ? showFoxSettings() : showBubble(action)).catch(() =>
+  void (
+    action === 'settings'
+      ? showFoxSettings()
+      : action === 'library'
+        ? showNotepad('library')
+        : showBubble(action)
+  ).catch(() =>
     dialog.showErrorBox('Pip could not open', 'Please restart Research Buddy and try again.'),
   );
 }
@@ -259,7 +266,7 @@ function notifyDue() {
           };
           const key = `${alert.reminder.id}:${alert.reminder.dueAt}:${alert.offsetMinutes}`;
           const read = () => {
-            const current = db.getReminder(alert.reminder.id);
+            const current = db.findReminder(alert.reminder.id);
             const latest = REMINDER_LEAD_MINUTES.filter(
               (offset) => Date.parse(alert.reminder.dueAt) - offset * 60000 <= Date.now(),
             ).at(-1);
@@ -439,6 +446,29 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       case 'snapshot':
         value = { ...db.snapshot(), companion: companion?.status, calendar: calendar?.status };
         break;
+      case 'createLibraryGroup':
+        value = db.createLibraryGroup(data.name as string);
+        break;
+      case 'renameLibraryGroup':
+        value = db.renameLibraryGroup(id(), data.name as string);
+        break;
+      case 'removeLibraryGroup':
+        value = db.removeLibraryGroup(id());
+        break;
+      case 'groupItems':
+        value = db.groupItems(
+          data.items as LibraryItemRef[],
+          data.groupId === undefined || data.groupId === ''
+            ? undefined
+            : text(data.groupId, 'Group', 100),
+        );
+        break;
+      case 'trashItems':
+        value = db.trashItems(data.items as LibraryItemRef[]);
+        break;
+      case 'restoreItems':
+        value = db.restoreItems(data.items as LibraryItemRef[]);
+        break;
       case 'createProject':
         value = db.createProject({
           name: data.name as string,
@@ -610,11 +640,13 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         break;
       case 'showNotepad':
         await showNotepad(
-          data.action === 'calendar'
-            ? 'calendar'
-            : data.action === 'reminder'
-              ? 'reminder'
-              : 'notes',
+          data.action === 'library'
+            ? 'library'
+            : data.action === 'calendar'
+              ? 'calendar'
+              : data.action === 'reminder'
+                ? 'reminder'
+                : 'notes',
           typeof data.noteId === 'string' ? data.noteId : undefined,
           typeof data.reminderId === 'string' ? data.reminderId : undefined,
         );

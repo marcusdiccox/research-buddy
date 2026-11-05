@@ -2,7 +2,7 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · reminders and roaming update 0.5.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · calendar and saved library update 0.6.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
@@ -10,9 +10,9 @@
 
 Download the Windows installer from the latest successful run in [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
 
-For the local update, open **`release-pip-reminders/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+For the local update, open **`release-pip-library/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
 
-1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
+1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Saved** opens searchable notes and reminders, with groups and recoverable Trash. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
 3. Use **Ask my notes** to find relevant passages across the current workspace.
 4. Add a reminder, or record your thinking in **Thesis journal**.
@@ -34,11 +34,12 @@ Pip is smaller now: an 80px control, random 25–180px trips at 12–24px/s, wit
 ## What works
 
 - **Notes and workspaces:** create a workspace for a company, class, or project; paste notes or import UTF-8 `.txt` and `.md` files. Files are previewed before saving.
+- **Saved library:** search note text and reminders, filter by type/group, select several items to group together, and move items to Trash or restore them. Groups are separate from research workspaces. Trashing a reminder stops local alerts and queued uploads; Google events already synced remain in Google. Historical research citations retain their source revisions.
 - **Quick summary:** selects important passages locally, preserving exact source quotes. It is extractive passage selection, not a hosted AI response.
 - **Ask my notes:** finds matching passages inside the selected workspace and says when it finds no evidence. It does not invent an answer.
 - **Saved evidence:** editing a note preserves its earlier versions. Old summaries are marked as needing a fresh look when their source changes.
 - **Thesis journal:** record a thesis, counterarguments, and conditions that would change your mind. Revisions preserve all fields and attached evidence.
-- **Reminders:** save a date/time and duration, with a single **Remind me** checkbox. Pip warns at **1 day, 6 hours, 2 hours, 1 hour, and 30 minutes** before the event. Editor alerts and optional Windows notifications also work while the app runs. Missed warnings collapse to one catch-up; successful checkpoints persist across restart. You can snooze for 15 minutes, complete, and reopen.
+- **Reminders:** save a date/time and duration, with a single **Remind me** checkbox. A small calendar and separate time field support mouse or keyboard entry. Pip warns at **1 day, 6 hours, 2 hours, 1 hour, and 30 minutes** before the event. Editor alerts and optional Windows notifications also work while the app runs. Missed warnings collapse to one catch-up; successful checkpoints persist across restart. You can snooze for 15 minutes, complete, and reopen.
 - **Connected Calendar:** sign in from the compact Calendar tab, then mark reminders for automatic creation/update in your primary Google calendar while Pip runs. Pending changes retry. This is one-way; Google-side edits are not imported. [Setup and permissions](docs/google-calendar-setup.md). Manual event drafts and `.ics` export remain available.
 - **Pip and the tray:** drag the fox to move it. Click for the notepad; right-click for tools/settings. Hide/restore with your shortcut or tray. Closing a window keeps Pip running; **Quit Research Buddy** stops it.
 - **Portable research:** export readable Markdown with sources, summaries, journal history, evidence links, and workspace reminders.
@@ -51,7 +52,7 @@ All note processing in this build happens on your device. No research is sent to
 
 Data is saved in an ordinary, unencrypted SQLite file in Electron's user-data directory, normally `%APPDATA%/Research Buddy/research.sqlite`. Exported Markdown is also plaintext. Keep sensitive research on a trusted computer.
 
-Imports support up to 2 MiB and 100,000 Unicode code points. Publication dates are optional and separate from save dates. The app does not fetch source URLs or provide live prices. PDF/OCR, note/workspace deletion, cloud sync, recurring reminders, and full backup/restore are not included yet.
+Imports support up to 2 MiB and 100,000 Unicode code points. Publication dates are optional and separate from save dates. The app does not fetch source URLs or provide live prices. PDF/OCR, permanent erasure/workspace deletion, cloud sync, recurring reminders, and full backup/restore are not included yet.
 
 ## Develop
 
@@ -87,6 +88,8 @@ The renderer uses React and TypeScript, with an isolated preload bridge. Electro
 - [Fox companion design](docs/superpowers/specs/2026-11-04-fox-companion-design.md)
 - [Original product design](docs/superpowers/specs/2026-11-03-research-buddy-design.md)
 - [Original implementation plan](docs/superpowers/plans/2026-11-03-research-buddy.md)
+- [Calendar and saved library verification](docs/calendar-library-verification.md)
+- [Research-only future ideas](docs/ideas/2026-11-04-helpful-next-steps.md)
 - [Reminder update verification](docs/reminders-update-verification.md)
 - [Development decisions and verification](docs/development-progress.md)
 

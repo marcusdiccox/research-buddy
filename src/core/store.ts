@@ -15,6 +15,9 @@ import type {
   Snapshot,
   Settings,
   CalendarLink,
+  LibraryGroup,
+  LibraryItemRef,
+  LibraryItemState,
 } from '../shared/contracts.js';
 
 const defaults: Settings = {
@@ -65,22 +68,38 @@ export class BuddyStore {
   close() {
     this.db.close();
   }
-  private all<T>(kind: string): T[] {
-    return (
+  private all<T>(kind: string, includeTrashed = false): T[] {
+    const items = (
       this.db.prepare('SELECT value FROM records WHERE kind=? ORDER BY rowid DESC').all(kind) as {
         value: string;
       }[]
     ).map((r) => JSON.parse(r.value) as T);
+    if (includeTrashed || !['note', 'reminder'].includes(kind)) return items;
+    const deleted = new Set(
+      this.all<LibraryItemState>('library-item')
+        .filter((item) => item.kind === kind && item.deletedAt)
+        .map((item) => item.itemId),
+    );
+    return items.filter((item) => !deleted.has((item as { id: string }).id));
+  }
+  private isTrashed(kind: string, id: string) {
+    if (!['note', 'reminder'].includes(kind)) return false;
+    const row = this.db
+      .prepare('SELECT value FROM records WHERE kind=? AND id=?')
+      .get('library-item', `${kind}:${id}`) as { value: string } | undefined;
+    return !!row && !!(JSON.parse(row.value) as LibraryItemState).deletedAt;
   }
   private put<T extends { id: string; projectId?: string }>(kind: string, item: T) {
     this.db
       .prepare('INSERT OR REPLACE INTO records(kind,id,project_id,value) VALUES(?,?,?,?)')
       .run(kind, item.id, item.projectId ?? '', JSON.stringify(item));
   }
-  private get<T>(kind: string, id: string): T {
+  private get<T>(kind: string, id: string, includeTrashed = false): T {
     const row = this.db.prepare('SELECT value FROM records WHERE kind=? AND id=?').get(kind, id) as
       { value: string } | undefined;
     if (!row) throw new Error('That item could not be found.');
+    if (!includeTrashed && this.isTrashed(kind, id))
+      throw new Error('That item is in Trash. Restore it from Saved.');
     return JSON.parse(row.value) as T;
   }
   private transaction<T>(work: () => T): T {
@@ -95,7 +114,19 @@ export class BuddyStore {
     }
   }
   snapshot(): Snapshot {
+    const libraryItems = this.all<LibraryItemState>('library-item');
+    const deleted = new Set(libraryItems.filter((item) => item.deletedAt).map((item) => item.id));
     return {
+      library: {
+        groups: this.all<LibraryGroup>('library-group'),
+        items: libraryItems,
+        trash: {
+          notes: this.all<Note>('note', true).filter((item) => deleted.has(`note:${item.id}`)),
+          reminders: this.all<Reminder>('reminder', true).filter((item) =>
+            deleted.has(`reminder:${item.id}`),
+          ),
+        },
+      },
       projects: this.all<Project>('project'),
       notes: this.all<Note>('note'),
       reminders: this.all<Reminder>('reminder'),
@@ -104,6 +135,112 @@ export class BuddyStore {
       settings: this.settings(),
       hasApiKey: false,
     };
+  }
+  createLibraryGroup(name: string): LibraryGroup {
+    const label = this.libraryGroupName(name);
+    const group = { id: randomUUID(), name: label, createdAt: new Date().toISOString() };
+    this.put('library-group', group);
+    return group;
+  }
+  private libraryGroupName(name: string, except?: string) {
+    const label = text(name, 'Group name', 60);
+    if (
+      this.all<LibraryGroup>('library-group').some(
+        (g) => g.id !== except && g.name.toLowerCase() === label.toLowerCase(),
+      )
+    )
+      throw new Error('A group with that name already exists.');
+    return label;
+  }
+  renameLibraryGroup(id: string, name: string) {
+    const group = this.get<LibraryGroup>('library-group', id);
+    group.name = this.libraryGroupName(name, id);
+    this.put('library-group', group);
+    return group;
+  }
+  removeLibraryGroup(id: string) {
+    this.get<LibraryGroup>('library-group', id);
+    return this.transaction(() => {
+      for (const item of this.all<LibraryItemState>('library-item').filter(
+        (item) => item.groupId === id,
+      )) {
+        delete item.groupId;
+        this.put('library-item', item);
+      }
+      this.db.prepare('DELETE FROM records WHERE kind=? AND id=?').run('library-group', id);
+    });
+  }
+  private libraryRefs(raw: LibraryItemRef[], includeTrashed = false): LibraryItemRef[] {
+    if (!Array.isArray(raw) || raw.length < 1 || raw.length > 500)
+      throw new Error('Select between 1 and 500 items.');
+    const found = new Map<string, LibraryItemRef>();
+    for (const ref of raw) {
+      if (!ref || !['note', 'reminder'].includes(ref.kind))
+        throw new Error('Choose a saved note or reminder.');
+      const id = text(ref.id, 'Item', 100);
+      this.get(ref.kind, id, includeTrashed);
+      found.set(`${ref.kind}:${id}`, { kind: ref.kind, id });
+    }
+    return [...found.values()];
+  }
+  private libraryState(ref: LibraryItemRef): LibraryItemState {
+    return (
+      this.all<LibraryItemState>('library-item').find(
+        (item) => item.id === `${ref.kind}:${ref.id}`,
+      ) ?? { id: `${ref.kind}:${ref.id}`, kind: ref.kind, itemId: ref.id }
+    );
+  }
+  groupItems(raw: LibraryItemRef[], groupId?: string) {
+    const refs = this.libraryRefs(raw);
+    if (groupId !== undefined) this.get<LibraryGroup>('library-group', groupId);
+    this.transaction(() => {
+      for (const ref of refs) {
+        const state = this.libraryState(ref);
+        if (groupId) state.groupId = groupId;
+        else delete state.groupId;
+        this.put('library-item', state);
+      }
+    });
+  }
+  trashItems(raw: LibraryItemRef[]) {
+    const refs = this.libraryRefs(raw);
+    this.transaction(() => {
+      for (const ref of refs) {
+        const state = this.libraryState(ref);
+        state.deletedAt = new Date().toISOString();
+        this.put('library-item', state);
+        if (ref.kind === 'note') this.db.prepare('DELETE FROM note_search WHERE id=?').run(ref.id);
+        else {
+          const reminder = this.get<Reminder>('reminder', ref.id, true);
+          this.cancelReminderAttempts(reminder, false);
+          this.put('reminder', reminder);
+        }
+      }
+    });
+  }
+  restoreItems(raw: LibraryItemRef[]) {
+    const refs = this.libraryRefs(raw, true);
+    this.transaction(() => {
+      for (const ref of refs) {
+        const state = this.libraryState(ref);
+        delete state.deletedAt;
+        this.put('library-item', state);
+        if (ref.kind === 'note') {
+          const note = this.get<Note>('note', ref.id, true);
+          this.db.prepare('DELETE FROM note_search WHERE id=?').run(ref.id);
+          this.db
+            .prepare('INSERT INTO note_search(id,project_id,title,body) VALUES(?,?,?,?)')
+            .run(note.id, note.projectId, note.title, note.body);
+        }
+      }
+    });
+  }
+  findReminder(id: string): Reminder | undefined {
+    if (this.isTrashed('reminder', id)) return undefined;
+    const row = this.db
+      .prepare('SELECT value FROM records WHERE kind=? AND id=?')
+      .get('reminder', id) as { value: string } | undefined;
+    return row ? (JSON.parse(row.value) as Reminder) : undefined;
   }
   calendarLinks(): CalendarLink[] {
     return this.all<CalendarLink>('calendar-link');
@@ -389,8 +526,9 @@ export class BuddyStore {
   }
   finishReminderAlert(alert: ReminderAlert, successful: boolean): void {
     this.transaction(() => {
-      const reminder = this.getReminder(alert.reminder.id);
+      const reminder = this.findReminder(alert.reminder.id);
       if (
+        !reminder ||
         reminder.completed ||
         reminder.remindEnabled === false ||
         reminder.dueAt !== alert.reminder.dueAt
@@ -439,8 +577,9 @@ export class BuddyStore {
     });
   }
   finishNotification(id: string, attemptAt: string, successful: boolean) {
-    const r = this.getReminder(id);
-    if (r.completed || r.remindEnabled === false || r.notificationAttemptAt !== attemptAt) return;
+    const r = this.findReminder(id);
+    if (!r || r.completed || r.remindEnabled === false || r.notificationAttemptAt !== attemptAt)
+      return;
     r.notificationAttemptAt = null;
     r.notificationError = !successful;
     if (successful) {

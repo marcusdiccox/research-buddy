@@ -1,3 +1,4 @@
+import { closeTestApp } from './helpers/close-app';
 import {
   test,
   expect,
@@ -29,7 +30,7 @@ test.beforeEach(async () => {
   await pet.waitForLoadState('domcontentloaded');
 });
 test.afterEach(async () => {
-  await app?.close();
+  await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true });
 });
 test('the native window and page are truly transparent, showing only a small fox', async () => {
@@ -101,7 +102,7 @@ test('fox settings change live and reduced motion turns off animation', async ()
     'title',
     /Ctrl \+ Shift \+ Space/,
   );
-  await app.close();
+  await closeTestApp(app);
   app = await electron.launch({
     executablePath: process.env.BUDDY_EXECUTABLE,
     args: process.env.BUDDY_EXECUTABLE ? [] : ['.'],

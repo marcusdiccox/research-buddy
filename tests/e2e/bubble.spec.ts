@@ -1,3 +1,5 @@
+import { closeTestApp } from './helpers/close-app';
+import { chooseDateTime } from './helpers/date-time';
 import {
   test,
   expect,
@@ -29,7 +31,7 @@ test.beforeEach(async () => {
   bubble = app.windows().find((p) => p.url().endsWith('#bubble'))!;
 });
 test.afterEach(async () => {
-  await app?.close();
+  await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true });
 });
 test('the writing bubble is frameless, transparent and keeps a real note when expanded', async () => {
@@ -91,7 +93,7 @@ test('closing preserves the writing draft and reminder mode uses the same text',
   await workspace.evaluate(() => window.buddy!.call('showBubble'));
   await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Call the library');
   await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
-  await bubble.getByLabel('Date and time').fill('2030-11-09T15:00');
+  await chooseDateTime(bubble, '2030-11-09T15:00');
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   const reminders = await bubble.evaluate(
     async () => (await window.buddy!.call<any>('snapshot')).reminders,
@@ -168,7 +170,7 @@ test('expansion follows the displayed text after switching saved note kinds', as
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(bubble.getByRole('status')).toContainText('Saved');
   await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
-  await bubble.getByLabel('Date and time').fill('2030-11-09T15:00');
+  await chooseDateTime(bubble, '2030-11-09T15:00');
   await bubble.getByRole('textbox', { name: 'Note text' }).fill('Current shared thought');
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(bubble.getByRole('status')).toContainText('Saved');

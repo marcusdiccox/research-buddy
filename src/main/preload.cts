@@ -2,6 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 const actions = new Set([
   'snapshot',
   'createProject',
+  'createLibraryGroup',
+  'renameLibraryGroup',
+  'removeLibraryGroup',
+  'groupItems',
+  'trashItems',
+  'restoreItems',
   'saveNote',
   'importFile',
   'summary',

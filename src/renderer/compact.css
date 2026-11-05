@@ -397,3 +397,38 @@
     font-size: 11px;
   }
 }
+
+.compact-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.compact-header h1 {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.compact-library-shell {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.compact-library-shell .compact-header {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+.compact-library-shell .item-library {
+  max-height: none;
+  min-height: 0;
+}
+.compact-library-shell .compact-footer {
+  flex-shrink: 0;
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.library-heading h2 {
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: 600;
+}

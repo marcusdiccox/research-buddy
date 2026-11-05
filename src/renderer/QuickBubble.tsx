@@ -1,3 +1,4 @@
+import { DateTimeField } from './DateTimeField';
 import {
   useCallback,
   useEffect,
@@ -63,13 +64,30 @@ export function QuickBubble() {
       initialized.current = true;
       setMode(position.action ?? 'notes');
     }
+    // Each kind has its own saved identity even though the editor text is shared.
+    if (noteId.current && !snapshot.notes.some((item) => item.id === noteId.current))
+      noteId.current = undefined;
+    if (reminderId.current && !snapshot.reminders.some((item) => item.id === reminderId.current))
+      reminderId.current = undefined;
     const previous = savedItem.current;
     if (!previous || busyRef.current) return;
     const item =
       previous.kind === 'note'
         ? snapshot.notes.find((note) => note.id === previous.id)
         : snapshot.reminders.find((reminder) => reminder.id === previous.id);
-    if (!item) return;
+    if (!item) {
+      if (previous.kind === 'note' && noteId.current === previous.id) noteId.current = undefined;
+      if (previous.kind === 'reminder' && reminderId.current === previous.id)
+        reminderId.current = undefined;
+      savedItem.current = null;
+      if (!dirty.current) setText('');
+      setMessage({
+        text: dirty.current
+          ? 'Moved to Trash · unsaved text kept as a new draft'
+          : 'Moved to Trash',
+      });
+      return;
+    }
     const fingerprint = JSON.stringify(item);
     if (fingerprint === previous.fingerprint) return;
     if (dirty.current) {
@@ -315,14 +333,13 @@ export function QuickBubble() {
             {mode !== 'notes' && (
               <label className="bubble-date">
                 When
-                <input
-                  type="datetime-local"
-                  aria-label="Date and time"
+                <DateTimeField
                   value={dateTime}
                   disabled={busy}
-                  onChange={(event) => {
+                  required
+                  onChange={(value) => {
                     dirty.current = true;
-                    setDateTime(event.target.value);
+                    setDateTime(value);
                     setMessage(null);
                   }}
                 />
@@ -368,6 +385,20 @@ export function QuickBubble() {
             {(message?.error ? message.text : (reminderNotice ?? message?.text)) ?? '\u00a0'}
           </p>
           <footer className="bubble-footer">
+            <button
+              type="button"
+              className="bubble-expand"
+              aria-label="Saved items"
+              disabled={busy || !data}
+              onClick={() =>
+                void run(async () => {
+                  await window.buddy!.call('showNotepad', { action: 'library' });
+                  await window.buddy!.call('hideBubble');
+                })
+              }
+            >
+              Saved
+            </button>
             <button
               className="bubble-expand"
               type="button"

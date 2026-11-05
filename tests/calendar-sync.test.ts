@@ -146,3 +146,36 @@ describe('calendar reminder outbox', () => {
     f.store.close();
   });
 });
+
+it('does not upload a queued opted-in reminder after it is moved to Trash', async () => {
+  const f = fixture();
+  const waiting = f.store.saveReminder({
+    title: 'Trashed before upload',
+    dueAt: '2030-01-01T13:00:00Z',
+    durationMinutes: 30,
+    calendarSync: true,
+  });
+  f.store.saveReminder({
+    title: 'First upload',
+    dueAt: '2030-01-01T14:00:00Z',
+    durationMinutes: 30,
+    calendarSync: true,
+  });
+  let release!: () => void;
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  f.client.upsertReminder.mockImplementationOnce(async (r) => {
+    await blocked;
+    f.writes.push({ ...r });
+    return { eventId: 'rb' + r.id.replaceAll('-', '') };
+  });
+  const running = f.sync.sync();
+  await Promise.resolve();
+  f.store.trashItems([{ kind: 'reminder', id: waiting.id }]);
+  release();
+  await running;
+  expect(f.writes.map((r) => r.title)).toEqual(['First upload']);
+  f.sync.dispose();
+  f.store.close();
+});

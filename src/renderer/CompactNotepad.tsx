@@ -1,3 +1,4 @@
+import { DateTimeField } from './DateTimeField';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { BookOpen, Bell, CalendarDays, Settings, Plus, ArrowUpRight, Save } from 'lucide-react';
 import type {
@@ -7,8 +8,10 @@ import type {
   Snapshot,
   NotebookItem,
   NotebookLaunch,
+  LibraryItemRef,
 } from '../shared/contracts';
 import './compact.css';
+import { ItemLibrary } from './ItemLibrary';
 
 type Mode = 'notes' | 'reminders' | 'calendar';
 type NoteFields = {
@@ -51,6 +54,8 @@ const tabs = [
 ] as const;
 
 export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }) {
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const focusEditor = useRef(false);
   const [mode, setMode] = useState<Mode>(initialMode);
   const [data, setData] = useState<Snapshot | null>(null);
   const [calendar, setCalendar] = useState<CalendarStatus | null>(null);
@@ -93,6 +98,11 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
   useEffect(
     () =>
       window.buddy?.onNavigate((action) => {
+        if (action === 'library') {
+          setLibraryOpen(true);
+          return;
+        }
+        setLibraryOpen(false);
         if (action === 'settings') {
           void window
             .buddy!.call('showFoxSettings')
@@ -114,6 +124,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
 
   useEffect(() => {
     const openItem = (item: NotebookItem) => {
+      setLibraryOpen(false);
       if (item.kind === 'note') {
         const draft =
           noteRef.current.id === item.note.id
@@ -160,6 +171,10 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
     void window.buddy
       ?.call<NotebookLaunch>('getNotebookLaunch')
       .then((launch) => {
+        if (launch.action === 'library') {
+          setLibraryOpen(true);
+          return;
+        }
         if (launch.item) openItem(launch.item);
         else
           setMode(
@@ -251,6 +266,38 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
           : blankReminder()),
     );
   }
+  function openSaved(ref: LibraryItemRef) {
+    if (ref.kind === 'note') {
+      selectNote(ref.id);
+      setMode('notes');
+    } else {
+      selectReminder(ref.id);
+      setMode('reminders');
+    }
+    focusEditor.current = true;
+    setLibraryOpen(false);
+  }
+  function deletedSaved(refs: LibraryItemRef[]) {
+    for (const ref of refs) {
+      if (ref.kind === 'note') {
+        noteDrafts.current.delete(ref.id);
+        dirtyNotes.current.delete(ref.id);
+        if (noteRef.current.id === ref.id) setNote(blankNote());
+      } else {
+        reminderDrafts.current.delete(ref.id);
+        dirtyReminders.current.delete(ref.id);
+        if (reminderRef.current.id === ref.id) setReminder(blankReminder());
+      }
+    }
+  }
+  useEffect(() => {
+    if (!libraryOpen && focusEditor.current) {
+      focusEditor.current = false;
+      document
+        .getElementById(mode === 'notes' ? 'compact-note-title' : 'compact-reminder-title')
+        ?.focus();
+    }
+  }, [libraryOpen, mode]);
   async function saveNote(event: FormEvent) {
     event.preventDefault();
     const saved = await run<Note>(
@@ -307,56 +354,71 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
     (savedReminder.remindEnabled !== false) !== reminder.remindEnabled;
 
   return (
-    <main className="compact-shell">
+    <main className={`compact-shell ${libraryOpen ? 'compact-library-shell' : ''}`}>
       <header className="compact-header">
         <div>
           <span className="compact-eyebrow">A LITTLE SPACE WITH PIP</span>
           <h1>My notebook</h1>
         </div>
-        <button
-          className="compact-icon-button"
-          aria-label="Settings"
-          title="Fox settings"
-          onClick={() => void run('showFoxSettings')}
-          disabled={!!busy}
-        >
-          <Settings size={18} />
-        </button>
-      </header>
-      <nav className="compact-tabs" role="tablist" aria-label="Notebook modes">
-        {tabs.map(({ mode: id, label, icon: Icon }) => (
+        <div className="compact-header-actions">
           <button
-            key={id}
-            id={`tab-${id}`}
-            role="tab"
-            aria-controls={`panel-${id}`}
-            aria-selected={mode === id}
-            tabIndex={mode === id ? 0 : -1}
-            onClick={() => setMode(id)}
-            onKeyDown={(event) => {
-              const index = tabs.findIndex((tab) => tab.mode === id);
-              const next =
-                event.key === 'ArrowRight'
-                  ? (index + 1) % tabs.length
-                  : event.key === 'ArrowLeft'
-                    ? (index + tabs.length - 1) % tabs.length
-                    : event.key === 'Home'
-                      ? 0
-                      : event.key === 'End'
-                        ? tabs.length - 1
-                        : null;
-              if (next !== null) {
-                event.preventDefault();
-                setMode(tabs[next].mode);
-                document.getElementById(`tab-${tabs[next].mode}`)?.focus();
-              }
-            }}
+            className="compact-secondary"
+            type="button"
+            aria-label="Saved items"
+            aria-pressed={libraryOpen}
+            onClick={() => setLibraryOpen(true)}
+            disabled={!!busy}
           >
-            <Icon size={16} />
-            {label}
+            <BookOpen size={16} />
+            Saved
           </button>
-        ))}
-      </nav>
+          <button
+            className="compact-icon-button"
+            aria-label="Settings"
+            title="Fox settings"
+            onClick={() => void run('showFoxSettings')}
+            disabled={!!busy}
+          >
+            <Settings size={18} />
+          </button>
+        </div>
+      </header>
+      {!libraryOpen && (
+        <nav className="compact-tabs" role="tablist" aria-label="Notebook modes">
+          {tabs.map(({ mode: id, label, icon: Icon }) => (
+            <button
+              key={id}
+              id={`tab-${id}`}
+              role="tab"
+              aria-controls={`panel-${id}`}
+              aria-selected={mode === id}
+              tabIndex={mode === id ? 0 : -1}
+              onClick={() => setMode(id)}
+              onKeyDown={(event) => {
+                const index = tabs.findIndex((tab) => tab.mode === id);
+                const next =
+                  event.key === 'ArrowRight'
+                    ? (index + 1) % tabs.length
+                    : event.key === 'ArrowLeft'
+                      ? (index + tabs.length - 1) % tabs.length
+                      : event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? tabs.length - 1
+                          : null;
+                if (next !== null) {
+                  event.preventDefault();
+                  setMode(tabs[next].mode);
+                  document.getElementById(`tab-${tabs[next].mode}`)?.focus();
+                }
+              }}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
       {(message || reminderNotice) && (
         <p
           className={`compact-message ${message?.error ? 'is-error' : ''}`}
@@ -378,6 +440,14 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
             Try again
           </button>
         </div>
+      ) : libraryOpen ? (
+        <ItemLibrary
+          data={data}
+          onRefresh={refresh}
+          onOpen={openSaved}
+          onDeleted={deletedSaved}
+          onBack={() => setLibraryOpen(false)}
+        />
       ) : (
         <section
           className="compact-panel"
@@ -389,21 +459,15 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
             <form className="compact-note-form" onSubmit={(event) => void saveNote(event)}>
               <fieldset disabled={!!busy} className="compact-fields compact-note-fields">
                 <div className="compact-picker-row">
-                  <label className="compact-grow">
+                  <button
+                    type="button"
+                    className="compact-secondary compact-grow"
+                    aria-label="Browse saved notes"
+                    onClick={() => setLibraryOpen(true)}
+                  >
+                    <BookOpen size={15} />
                     Saved notes
-                    <select
-                      aria-label="Saved notes"
-                      value={note.id ?? ''}
-                      onChange={(event) => selectNote(event.target.value)}
-                    >
-                      <option value="">New note</option>
-                      {data.notes.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.title}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  </button>
                   <button
                     type="button"
                     className="compact-secondary"
@@ -431,6 +495,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                 <label>
                   Note title
                   <input
+                    id="compact-note-title"
                     aria-label="Note title"
                     required
                     maxLength={200}
@@ -587,21 +652,15 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
               >
                 <fieldset disabled={!!busy} className="compact-fields">
                   <div className="compact-picker-row">
-                    <label className="compact-grow">
+                    <button
+                      type="button"
+                      className="compact-secondary compact-grow"
+                      aria-label="Browse saved reminders"
+                      onClick={() => setLibraryOpen(true)}
+                    >
+                      <BookOpen size={15} />
                       Saved reminders
-                      <select
-                        aria-label="Saved reminders"
-                        value={reminder.id ?? ''}
-                        onChange={(event) => selectReminder(event.target.value)}
-                      >
-                        <option value="">New reminder</option>
-                        {data.reminders.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.title}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    </button>
                     <button
                       type="button"
                       className="compact-secondary"
@@ -614,6 +673,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                   <label>
                     Reminder title
                     <input
+                      id="compact-reminder-title"
                       aria-label="Reminder title"
                       required
                       maxLength={200}
@@ -636,14 +696,11 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
                   <div className="compact-date-row">
                     <label className="compact-grow">
                       Date and time
-                      <input
-                        aria-label="Date and time"
-                        type="datetime-local"
-                        required
+                      <DateTimeField
                         value={reminder.dateTime}
-                        onChange={(event) =>
-                          editReminder({ ...reminder, dateTime: event.target.value })
-                        }
+                        disabled={!!busy}
+                        required
+                        onChange={(dateTime) => editReminder({ ...reminder, dateTime })}
                       />
                     </label>
                     <label>

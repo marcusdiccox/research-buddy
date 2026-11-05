@@ -1,3 +1,4 @@
+import { DateTimeField } from './DateTimeField';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Sprout,
@@ -1263,6 +1264,7 @@ function ReminderForm({
     remindEnabled: boolean;
   }) => void;
 }) {
+  const [dateTime, setDateTime] = useState(() => localDate(reminder?.dueAt));
   return (
     <form
       onSubmit={(e) => {
@@ -1291,11 +1293,12 @@ function ReminderForm({
       <div className="form-row">
         <label>
           Date and time
-          <input
+          <DateTimeField
             name="dueAt"
-            type="datetime-local"
+            value={dateTime}
+            onChange={setDateTime}
+            disabled={busy}
             required
-            defaultValue={localDate(reminder?.dueAt)}
           />
         </label>
         <label>

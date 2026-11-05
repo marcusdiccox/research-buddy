@@ -100,7 +100,29 @@ export interface Settings extends PetPreferences {
   providerConsent: boolean;
   bubblePinned: boolean;
 }
+export interface LibraryGroup {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+export interface LibraryItemRef {
+  kind: 'note' | 'reminder';
+  id: string;
+}
+export interface LibraryItemState {
+  id: string;
+  kind: 'note' | 'reminder';
+  itemId: string;
+  groupId?: string;
+  deletedAt?: string;
+}
+export interface LibrarySnapshot {
+  groups: LibraryGroup[];
+  items: LibraryItemState[];
+  trash: { notes: Note[]; reminders: Reminder[] };
+}
 export interface Snapshot {
+  library: LibrarySnapshot;
   projects: Project[];
   notes: Note[];
   reminders: Reminder[];
@@ -135,11 +157,11 @@ export interface HitRegion {
   height: number;
   shape: 'rect' | 'ellipse';
 }
-export type NotebookAction = 'notes' | 'reminder' | 'calendar' | 'settings';
+export type NotebookAction = 'notes' | 'reminder' | 'calendar' | 'settings' | 'library';
 export type NotebookItem =
   { kind: 'note'; note: Note } | { kind: 'reminder' | 'calendar'; reminder: Reminder };
 export interface NotebookLaunch {
-  action: 'notes' | 'reminder' | 'calendar';
+  action: 'notes' | 'reminder' | 'calendar' | 'library';
   item?: NotebookItem;
 }
 export interface NoteDraft {

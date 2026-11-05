@@ -1,3 +1,5 @@
+import { closeTestApp } from './helpers/close-app';
+import { chooseDateTime } from './helpers/date-time';
 import {
   test,
   expect,
@@ -43,7 +45,7 @@ test.beforeEach(async () => {
   );
 });
 test.afterEach(async () => {
-  await app?.close();
+  await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -70,7 +72,8 @@ test('notes persist and an unsaved draft survives switching modes and navigation
   );
   await notepad.reload();
   await notepad.getByRole('tab', { name: 'Notes', exact: true }).click();
-  await notepad.getByLabel('Saved notes').selectOption({ label: 'Small notebook' });
+  await notepad.getByRole('button', { name: 'Saved items', exact: true }).click();
+  await notepad.getByRole('button', { name: 'Open note Small notebook', exact: true }).click();
   await expect(notepad.getByLabel('Note text', { exact: true })).toHaveValue(
     'A real persisted note.',
   );
@@ -83,7 +86,7 @@ test('reminders save and edit the same real calendar event without implying a Go
   await notepad.getByRole('tab', { name: 'Reminders', exact: true }).click();
   await notepad.getByLabel('Reminder title', { exact: true }).fill('Walk with Pip');
   await notepad.getByLabel('Details', { exact: true }).fill('A little break');
-  await notepad.getByLabel('Date and time', { exact: true }).fill('2030-11-06T15:30');
+  await chooseDateTime(notepad, '2030-11-06T15:30');
   await notepad.getByRole('button', { name: 'Save reminder', exact: true }).click();
   await expect(notepad.getByRole('status')).toContainText('Reminder saved');
   await notepad.getByRole('tab', { name: 'Calendar', exact: true }).click();
@@ -107,7 +110,8 @@ test('reminders save and edit the same real calendar event without implying a Go
   });
   await expect(notepad.getByRole('button', { name: 'Open Google event draft' })).toBeVisible();
   await notepad.getByRole('button', { name: 'New reminder', exact: true }).click();
-  await notepad.getByLabel('Saved reminders').selectOption({ label: 'Walk with Pip' });
+  await notepad.getByRole('button', { name: 'Saved items', exact: true }).click();
+  await notepad.getByRole('button', { name: 'Open reminder Walk with Pip', exact: true }).click();
   await expect(notepad.getByLabel('Reminder title', { exact: true })).toHaveValue('Walk with Pip');
 });
 

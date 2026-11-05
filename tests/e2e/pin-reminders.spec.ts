@@ -1,3 +1,5 @@
+import { closeTestApp } from './helpers/close-app';
+import { chooseDateTime } from './helpers/date-time';
 import {
   test,
   expect,
@@ -29,7 +31,7 @@ test.beforeEach(async () => {
   bubble = app.windows().find((p) => p.url().endsWith('#bubble'))!;
 });
 test.afterEach(async () => {
-  await app?.close();
+  await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true });
 });
 const focusAway = () =>
@@ -89,7 +91,7 @@ test('upcoming reminders reach Pip and the editor without replacing the draft', 
   const local = new Date(due.getTime() - due.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
-  await bubble.getByLabel('Date and time').fill(local);
+  await chooseDateTime(bubble, local);
   await bubble.getByRole('textbox', { name: 'Note text' }).fill('Upcoming appointment');
   await bubble.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(bubble.getByRole('alert')).toContainText('Upcoming appointment is due in');

@@ -1,3 +1,5 @@
+import { closeTestApp } from './helpers/close-app';
+import { chooseDateTime } from './helpers/date-time';
 import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,7 +18,7 @@ test.beforeEach(async () => {
   app = await launch();
 });
 test.afterEach(async () => {
-  await app?.close();
+  await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true });
 });
 test('advanced research settings still expose notifications and export', async () => {
@@ -57,7 +59,7 @@ test('a beginner can save a note, summarize it, inspect evidence and restart', a
   await page.getByRole('button', { name: 'Save note', exact: true }).click();
   await expect(page.getByText('This note has changed since its last summary.')).toBeVisible();
   await expect(page.locator('.summary-panel .takeaway')).toHaveCount(0);
-  await app.close();
+  await closeTestApp(app);
   app = await launch();
   const reopened = await app.firstWindow();
   await expect(reopened.getByText('My first research note').first()).toBeVisible();
@@ -67,7 +69,7 @@ test('reminders can be created, snoozed, completed and turned into calendar draf
   await page.getByRole('button', { name: 'Reminders', exact: true }).click();
   await page.getByRole('button', { name: 'New reminder', exact: true }).click();
   await page.getByLabel('What would you like to remember?').fill('Review earnings');
-  await page.getByLabel('Date and time').fill('2027-01-10T10:30');
+  await chooseDateTime(page, '2027-01-10T10:30');
   await page.getByRole('button', { name: 'Save reminder', exact: true }).click();
   await expect(page.getByText('Review earnings')).toBeVisible();
   const stored = await page.evaluate(async () => {
