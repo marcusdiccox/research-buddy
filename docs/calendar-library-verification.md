@@ -21,3 +21,5 @@ Installer: `release-pip-library/Research Buddy Setup 0.6.0.exe` (128,210,310 byt
 All 39 desktop journeys passed against the packaged executable, including both new screens and the existing research/fox/reminder workflows.
 
 The real saved notebook was backed up locally before normal launch. Version 0.6 was launched on the desktop, the writing bubble and Saved entry point were observed, and existing saved note/project/journal contents matched the pre-update backup. No real items were deleted or grouped during testing.
+
+Hosted Windows type checks, all 111 backend tests, all 39 desktop journeys, NSIS packaging and installer artifact upload passed on [run 41944683103](https://github.com/marcusdiccox/research-buddy/actions/runs/41944683103).

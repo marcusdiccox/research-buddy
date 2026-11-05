@@ -76,3 +76,13 @@ Plan: `docs/superpowers/plans/2026-11-04-fox-companion.md`.
 - Added persistent pin/unpin and native blur-to-hide, randomized bounded trips and 97 shuffled themed phrases.
 - TypeScript, 65 backend tests and 31 packaged desktop journeys passed. All 4,743 archive files passed integrity checks. Existing saved notebook content was backed up and verified preserved after normal restart; 0.5 remains running locally.
 - Hosted Windows verification and installer upload passed on attempt 2 after one transient Electron test-process shutdown timeout. [Detailed evidence and installer hash](reminders-update-verification.md).
+
+
+## Calendar and Saved library update 0.6 - 2026-11-04
+
+- Added a small keyboard-operable month/time picker across the bubble, compact notebook and advanced reminder form, with local date/DST validation and Cancel/Done focus restoration.
+- Added Saved search and type/group filters for notes and reminders, independent library groups, multi-item grouping and recoverable local Trash/restore. Queued local alerts and later queued calendar uploads exclude Trash; historical citation revisions remain available.
+- Fixed cross-window saved identities after Trash in both kinds and both saving orders, with failing-then-passing desktop regressions. Darkened low-contrast metadata and kept the Saved view inside the compact native viewport.
+- 111 backend tests and 39 packaged desktop journeys passed; 4,744 archive files passed integrity checks. Normal launch and preserved real notebook contents verified after a local backup. No real items were deleted/grouped during testing.
+- Hosted Windows checks, all tests, installer generation and artifact upload passed on [run 41944683103](https://github.com/marcusdiccox/research-buddy/actions/runs/41944683103). [Detailed evidence and installer hash](calendar-library-verification.md).
+- [Additional researched ideas](ideas/2026-11-04-helpful-next-steps.md) remain proposals only.

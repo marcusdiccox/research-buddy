@@ -44,7 +44,7 @@
 - [x] Save source-linked research-only ideas and update documentation.
 - [x] Run backend/type/build/desktop checks and independent whole-change review; fix important findings.
 - [x] Build frozen-input Windows package, verify archive integrity and packaged journeys; inspect visuals.
-- [ ] Back up user data, preserve any live unsaved draft, refresh local Pip, publish source and verify hosted Windows build.
+- [x] Back up user data, preserve any live unsaved draft, refresh local Pip, publish source and verify hosted Windows build.
 
 Ruling: continue in the clean existing checkout on a feature branch; the running application uses a separate packaged directory, and no concurrent source edits need isolation. The user confirmed both notes and reminders.
 
