@@ -2,15 +2,17 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · routines update 0.7.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · Windows startup update 0.8.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-Download the Windows installer from the latest successful run in [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml): open **Artifacts**, download **research-buddy-windows**, extract the ZIP, and run the installer inside.
+[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.8.0.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
 
-For the local update, open **`release-pip-routines/win-unpacked/Research Buddy.exe`**. A standard `npm run pack` build creates `release/win-unpacked/Research Buddy.exe`. The Windows installer is generated in `release/` by `npm run make`.
+After installation, open **Research Buddy** from the desktop or Start menu. Quitting Pip ends the current session; automatic startup opens it again when you next sign in to Windows. Uninstall removes Pip’s own startup entry.
+
+Development builds are also available under [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml). A standard `npm run pack` creates `release/win-unpacked/Research Buddy.exe`; `npm run make` creates the installer in `release/`. Unpacked builds do not register themselves for automatic startup.
 
 1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Saved** opens searchable notes and reminders, with groups and recoverable Trash. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
@@ -97,6 +99,7 @@ The renderer uses React and TypeScript, with an isolated preload bridge. Electro
 - [Calendar and saved library verification](docs/calendar-library-verification.md)
 - [Research-only future ideas](docs/ideas/2026-11-04-helpful-next-steps.md)
 - [Reminder update verification](docs/reminders-update-verification.md)
+- [Windows startup verification](docs/startup-verification.md)
 - [Development decisions and verification](docs/development-progress.md)
 
-The original epic includes optional hosted AI and a broader release checklist. The current local build implements the usable offline foundation; it does not claim every epic item is finished. A project license has not been selected. Choose one before publishing a software release.
+The original epic includes optional hosted AI and a broader release checklist. The current local build implements the usable offline foundation; it does not claim every epic item is finished. A project license has not been selected.

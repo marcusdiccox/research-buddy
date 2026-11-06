@@ -28,6 +28,7 @@ const defaults: Settings = {
   notifications: true,
   providerConsent: false,
   bubblePinned: false,
+  startWithWindows: false,
 };
 interface CheckpointState {
   settled?: boolean;
@@ -276,6 +277,7 @@ export class BuddyStore {
                 'providerConsent',
                 'petReducedMotion',
                 'bubblePinned',
+                'startWithWindows',
               ].includes(key)
             ? typeof value === 'boolean'
             : ['petX', 'petY'].includes(key) && typeof value === 'number' && Number.isFinite(value),

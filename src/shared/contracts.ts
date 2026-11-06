@@ -100,6 +100,7 @@ export interface PetPreferences {
   petShortcut: 'Control+Alt+P' | 'Control+Shift+Space' | 'Alt+Shift+P';
 }
 export interface Settings extends PetPreferences {
+  startWithWindows: boolean;
   petVisible: boolean;
   alwaysOnTop: boolean;
   petX?: number;

@@ -157,6 +157,15 @@ test('settings open separately with working fox controls and fit their compact w
   expect(Math.abs(geometry.size[0] - 340)).toBeLessThanOrEqual(2);
   expect(Math.abs(geometry.size[1] - 400)).toBeLessThanOrEqual(2);
 
+  await settings.getByLabel('Start with Windows', { exact: true }).check();
+  await expect
+    .poll(
+      async () =>
+        (await settings.evaluate(() => window.buddy!.call<any>('snapshot'))).settings
+          .startWithWindows,
+    )
+    .toBe(true);
+  await settings.getByLabel('Start with Windows', { exact: true }).uncheck();
   await settings.getByLabel('Appearance').selectOption('arctic');
   await expect
     .poll(

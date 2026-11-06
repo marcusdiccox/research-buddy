@@ -88,6 +88,12 @@ export function FoxSettings({
           after a moment.
         </p>
         <SettingToggle
+          label="Start with Windows"
+          detail="Pip opens automatically when you sign in."
+          checked={settings.startWithWindows}
+          onChange={(value) => onChange({ startWithWindows: value })}
+        />
+        <SettingToggle
           label="Reduce motion"
           detail="Keep Pip still and turn off animated movements. Windows reduced-motion settings are respected, too."
           checked={settings.petReducedMotion}

@@ -124,6 +124,14 @@ export function CompactSettings() {
               />
             </label>
             <label className="popup-setting popup-toggle">
+              <span>Start with Windows</span>
+              <input
+                type="checkbox"
+                checked={settings.startWithWindows}
+                onChange={(event) => void change({ startWithWindows: event.target.checked })}
+              />
+            </label>
+            <label className="popup-setting popup-toggle">
               <span>Reduced motion</span>
               <input
                 type="checkbox"

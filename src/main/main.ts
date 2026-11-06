@@ -24,6 +24,7 @@ import { FocusSession } from '../core/focus.js';
 import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
 import { EventEmitter } from 'node:events';
 import { CompanionController } from './companion.js';
+import { WindowsStartup } from './startup.js';
 import { placeWritingBubble } from '../core/popover.js';
 import { CalendarSync, type CalendarConnection } from '../core/calendar-sync.js';
 import type {
@@ -42,6 +43,13 @@ if (process.env.RESEARCH_BUDDY_DATA_DIR)
   app.setPath('userData', resolve(process.env.RESEARCH_BUDDY_DATA_DIR));
 app.setName('Research Buddy');
 app.setAppUserModelId('com.researchbuddy.desktop');
+const startup = new WindowsStartup(app, {
+  executable: process.execPath,
+  platform: process.platform,
+  installed:
+    app.isPackaged && existsSync(join(dirname(process.execPath), 'Uninstall Research Buddy.exe')),
+  testMode,
+});
 let workspace: BrowserWindow | undefined,
   companion: CompanionController | undefined,
   notepad: BrowserWindow | undefined,
@@ -463,14 +471,20 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       project = () => text(data.projectId, 'Workspace', 100);
     let value: unknown;
     switch (action) {
-      case 'snapshot':
+      case 'snapshot': {
+        const snapshot = db.snapshot();
         value = {
-          ...db.snapshot(),
+          ...snapshot,
+          settings: {
+            ...snapshot.settings,
+            startWithWindows: startup.status(snapshot.settings.startWithWindows),
+          },
           companion: companion?.status,
           calendar: calendar?.status,
           focus: focusStatus(),
         };
         break;
+      }
       case 'focusStatus':
         value = focusStatus();
         break;
@@ -604,8 +618,17 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         break;
       }
       case 'settings': {
+        const previousStartup = db.settings().startWithWindows;
         const saved = db.saveSettings(data as Partial<Settings>);
-        value = saved;
+        if ('startWithWindows' in data) {
+          try {
+            startup.set(data.startWithWindows);
+          } catch (error) {
+            db.saveSettings({ startWithWindows: previousStartup });
+            throw error;
+          }
+        }
+        value = { ...saved, startWithWindows: startup.status(saved.startWithWindows) };
         writingBubble?.setAlwaysOnTop(saved.bubblePinned || saved.alwaysOnTop);
         companion?.configure();
         break;
