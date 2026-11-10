@@ -1,7 +1,8 @@
 import { closeTestApp } from './helpers/close-app';
 import { chooseDateTime } from './helpers/date-time';
 import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
@@ -34,6 +35,57 @@ test('advanced research settings still expose notifications and export', async (
     )
     .toBe(false);
   await expect(page.getByRole('button', { name: 'Export this workspace' })).toBeVisible();
+});
+
+test('startup backs up the notebook and a same-day restart preserves the earlier snapshot', async () => {
+  const waitUntilReady = () =>
+    expect
+      .poll(() =>
+        app.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().some(
+            (window) =>
+              window.webContents.getURL().endsWith('#pet') && !window.webContents.isLoading(),
+          ),
+        ),
+      )
+      .toBe(true);
+  await waitUntilReady();
+  const page = await app.firstWindow();
+  const initial = await page.evaluate(() => window.buddy!.call<any>('snapshot'));
+  const backupDir = join(dir, 'backups');
+  const files = readdirSync(backupDir).filter((name) => name.endsWith('.sqlite'));
+  expect(files).toHaveLength(1);
+  const snapshot = new DatabaseSync(join(backupDir, files[0]), { readOnly: true });
+  try {
+    const project = snapshot.prepare("SELECT id FROM records WHERE kind='project'").get();
+    expect(project?.id).toBe(initial.projects[0].id);
+  } finally {
+    snapshot.close();
+  }
+  await page.evaluate(
+    (projectId) =>
+      window.buddy!.call('saveNote', {
+        projectId,
+        title: 'After startup',
+        body: 'This stays in the active notebook.',
+      }),
+    initial.projects[0].id,
+  );
+  await closeTestApp(app);
+  app = await launch();
+  await waitUntilReady();
+  const reopened = await app.firstWindow();
+  const current = await reopened.evaluate(() => window.buddy!.call<any>('snapshot'));
+  expect(current.notes[0].body).toBe('This stays in the active notebook.');
+  expect(readdirSync(backupDir).filter((name) => name.endsWith('.sqlite'))).toEqual(files);
+  const original = new DatabaseSync(join(backupDir, files[0]), { readOnly: true });
+  try {
+    expect(original.prepare("SELECT count(*) AS n FROM records WHERE kind='note'").get()?.n).toBe(
+      0,
+    );
+  } finally {
+    original.close();
+  }
 });
 test('a beginner can save a note, summarize it, inspect evidence and restart', async () => {
   const page = await app.firstWindow();

@@ -1,6 +1,6 @@
 # Possible next additions for Pip
 
-Update November 5: natural dates, repeating reminders and quiet focus are now implemented in 0.7. Automatic backups remain a proposal. The original research below records the earlier planning context.
+Update November 9: natural dates, repeating reminders and quiet focus shipped in 0.7. Daily verified local backups with seven-snapshot retention are now implemented in source; a restore screen remains a proposal. The original research below records the earlier planning context.
 
 Researched November 4, 2026. These are proposals only; none is implemented by the calendar/library update. Ranking reflects my judgment about this small local desktop companion, not a claim that a feature improves everyone's productivity.
 

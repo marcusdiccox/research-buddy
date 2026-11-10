@@ -15,6 +15,7 @@ import { join, dirname, basename, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync, statSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { BuddyStore, text } from '../core/store.js';
+import { backupNotebook } from '../core/backups.js';
 import { summarize, answerFromNotes } from '../core/research.js';
 import { googleCalendarUrl, calendarFile } from '../core/calendar.js';
 import { exportDossier } from '../core/export.js';
@@ -352,8 +353,15 @@ else {
     .whenReady()
     .then(async () => {
       mkdirSync(app.getPath('userData'), { recursive: true });
-      db = new BuddyStore(join(app.getPath('userData'), 'research.sqlite'));
+      const databasePath = join(app.getPath('userData'), 'research.sqlite');
+      db = new BuddyStore(databasePath);
       if (!db.snapshot().projects.length) db.createProject({ name: 'My notebook' });
+      const backUpNotebook = () => {
+        const result = backupNotebook(databasePath);
+        if (result.status === 'failed') console.warn('Notebook backup failed:', result.message);
+      };
+      backUpNotebook();
+      setInterval(backUpNotebook, 30 * 60 * 1000).unref();
       workspace = baseWindow({
         width: 1260,
         height: 850,
