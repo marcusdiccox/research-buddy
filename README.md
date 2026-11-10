@@ -1,6 +1,6 @@
 # Research Buddy 🦊
 
-**Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
+**Pip is a little friend who lives on your desktop.** Choose a fox, red panda or otter to stroll, blink, stretch awake, tell gentle jokes and offer a paw when you need one. Click Pip for your notes, research and reminders.
 
 **Status: early Windows build · animals and automatic updates 0.9.0.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 

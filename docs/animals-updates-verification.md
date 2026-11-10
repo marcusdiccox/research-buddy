@@ -12,4 +12,8 @@ Independent review found an unhandled automatic-download promise: electron-updat
 
 The final archive passed embedded SHA-256 checks for all 5,017 files and matches the compiled main/preload/update/behavior modules. latest.yml's SHA-512 and byte size match the installer; app-update.yml pins the intended GitHub owner/repository. Installer SHA-256: B835C0DFE760F32B0311161940622EA1C82D4CB3152E3ECCC2B84078DB5943CB.
 
-The public release feed/download probe runs after publication in an isolated adapter/cache, with installation disabled. An actual unattended upgrade is not claimed here. Earlier versions need one manual installation of 0.9.0. Windows code signing remains unconfigured.
+Hosted Windows run 42910283252 passed all 232 backend tests, all 48 desktop journeys and installer packaging before publication. All three uploaded GitHub asset hashes matched the local release files.
+
+After publication, an isolated electron-updater adapter reporting version 0.8.1 found the real public 0.9.0 release, downloaded its complete installer and independently verified SHA-512 against the manifest. Installation was disabled throughout that probe. Its adapter/cache did not use the production profile.
+
+With no production Pip process running, backed up the existing notebook, installed the tested 0.9.0 installer and confirmed the installed archive matches the tested package. Launched the stable installed executable; it reported version 0.9.0 and its live automatic check reported latest 0.9.0 with downgrade disallowed. Existing saved notes/projects/journal were unchanged, a daily backup was created, and the Windows startup entry remained enabled. An actual unattended version-to-version installer execution is not claimed; the real feed/download/checksum and installed-app check are verified. Earlier versions need one manual installation of 0.9.0. Windows code signing remains unconfigured.
