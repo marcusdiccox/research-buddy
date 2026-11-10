@@ -27,6 +27,22 @@
   background-position-y: 66.666667%;
   animation: fox-cycle 0.8s steps(4) infinite;
 }
+.fox-entering-swim .fox-sprite {
+  background-position-y: 0%;
+  animation: fox-transition 0.7s steps(3) forwards;
+}
+.fox-swimming .fox-sprite {
+  background-position-y: 33.333333%;
+  animation: fox-cycle 0.95s steps(4) infinite;
+}
+.fox-leaving-swim .fox-sprite {
+  background-position-y: 66.666667%;
+  animation: fox-transition 0.65s steps(3) forwards;
+}
+.fox-floating .fox-sprite {
+  background-position-y: 100%;
+  animation: fox-cycle 2s steps(4) infinite;
+}
 .fox-sleeping .fox-sprite {
   background-position-y: 100%;
   animation: fox-cycle 4s steps(4) infinite;

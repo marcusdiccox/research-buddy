@@ -92,6 +92,7 @@ export interface JournalEntry {
   createdAt: string;
 }
 export interface PetPreferences {
+  petSpecies: 'fox' | 'red-panda' | 'otter';
   petAppearance: 'red' | 'arctic' | 'midnight';
   petRoamArea: 'bottom' | 'desktop' | 'parked';
   petJokeStyle: 'wholesome' | 'dad' | 'nerdy';
@@ -131,6 +132,7 @@ export interface LibrarySnapshot {
   trash: { notes: Note[]; reminders: Reminder[] };
 }
 export interface Snapshot {
+  updates?: UpdateStatus;
   focus?: FocusStatus;
   library: LibrarySnapshot;
   projects: Project[];
@@ -143,6 +145,21 @@ export interface Snapshot {
   companion?: { shortcutAvailable: boolean; activeShortcut: string | null };
   calendar?: CalendarStatus;
 }
+export interface UpdateStatus {
+  phase:
+    | 'unsupported'
+    | 'idle'
+    | 'checking'
+    | 'current'
+    | 'available'
+    | 'downloading'
+    | 'ready'
+    | 'error';
+  currentVersion: string;
+  version?: string;
+  percent?: number;
+  message?: string;
+}
 export interface PetView {
   pose:
     | 'idle'
@@ -152,7 +169,11 @@ export interface PetView {
     | 'standing-up'
     | 'sitting-down'
     | 'curling-up'
-    | 'waking-up';
+    | 'waking-up'
+    | 'entering-swim'
+    | 'swimming'
+    | 'leaving-swim'
+    | 'floating';
   direction: 1 | -1;
   phrase: string | null;
   preferences: PetPreferences;

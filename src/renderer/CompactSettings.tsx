@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import type { Settings, Snapshot } from '../shared/contracts';
+import { UpdateControl, updateLabel } from './UpdateControl';
 import './floating.css';
 
 export function CompactSettings() {
@@ -40,7 +41,7 @@ export function CompactSettings() {
   const settings = data?.settings;
   return (
     <main className="floating-settings">
-      <section className="floating-card settings-popup" aria-label="Fox settings">
+      <section className="floating-card settings-popup" aria-label="Companion settings">
         <header className="floating-header">
           <h1>Settings</h1>
           <button
@@ -56,6 +57,19 @@ export function CompactSettings() {
         {settings ? (
           <fieldset className="popup-settings-fields" disabled={busy}>
             <label className="popup-setting">
+              <span>Animal</span>
+              <select
+                value={settings.petSpecies}
+                onChange={(event) =>
+                  void change({ petSpecies: event.target.value as Settings['petSpecies'] })
+                }
+              >
+                <option value="fox">Fox</option>
+                <option value="red-panda">Red panda</option>
+                <option value="otter">Otter</option>
+              </select>
+            </label>
+            <label className="popup-setting">
               <span>Appearance</span>
               <select
                 value={settings.petAppearance}
@@ -63,7 +77,7 @@ export function CompactSettings() {
                   void change({ petAppearance: event.target.value as Settings['petAppearance'] })
                 }
               >
-                <option value="red">Red</option>
+                <option value="red">Natural</option>
                 <option value="arctic">Arctic</option>
                 <option value="midnight">Midnight</option>
               </select>
@@ -143,15 +157,18 @@ export function CompactSettings() {
         ) : (
           <p className="settings-loading">Opening settings…</p>
         )}
-        <p
-          className={`floating-status ${message?.error || data?.companion?.shortcutAvailable === false ? 'is-error' : ''}`}
-          role={message?.error ? 'alert' : 'status'}
-        >
-          {message?.text ??
-            (data?.companion?.shortcutAvailable === false
-              ? 'Shortcut unavailable. Choose another.'
-              : '\u00a0')}
-        </p>
+        <footer className="settings-footer">
+          <p
+            className={`floating-status ${message?.error || data?.companion?.shortcutAvailable === false ? 'is-error' : ''}`}
+            role={message?.error ? 'alert' : 'status'}
+          >
+            {message?.text ??
+              (data?.companion?.shortcutAvailable === false
+                ? 'Shortcut unavailable. Choose another.'
+                : updateLabel(data?.updates) || '\u00a0')}
+          </p>
+          <UpdateControl status={data?.updates} onError={showError} />
+        </footer>
       </section>
     </main>
   );

@@ -256,6 +256,7 @@ export class BuddyStore {
   }
   saveSettings(patch: Partial<Settings>): Settings {
     const choices: Record<string, readonly string[]> = {
+      petSpecies: ['fox', 'red-panda', 'otter'],
       petAppearance: ['red', 'arctic', 'midnight'],
       petRoamArea: ['bottom', 'desktop', 'parked'],
       petJokeStyle: ['wholesome', 'dad', 'nerdy'],

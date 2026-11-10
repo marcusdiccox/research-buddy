@@ -2,6 +2,11 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import type { PetPreferences, PetView } from '../shared/contracts';
 import atlasSource from '../../assets/fox/fox-atlas.png';
 import transitionSource from '../../assets/fox/fox-transitions.png';
+import pandaAtlas from '../../assets/red-panda/red-panda-atlas-clean.png';
+import pandaTransitions from '../../assets/red-panda/red-panda-transitions-clean.png';
+import otterAtlas from '../../assets/otter/otter-atlas-clean.png';
+import otterTransitions from '../../assets/otter/otter-transitions-clean.png';
+import otterSwimming from '../../assets/otter/otter-swimming-clean.png';
 import './pet.css';
 
 type Appearance = PetPreferences['petAppearance'];
@@ -40,7 +45,7 @@ function spriteAtlas(appearance: Appearance, source = atlasSource): Promise<stri
           g = p[i + 1],
           b = p[i + 2];
         // Alpha testing avoids a colored fringe on transparent desktop backgrounds.
-        if (p[i + 3] < 210 || (r > 180 && g < 65 && b < 65)) {
+        if (p[i + 3] < 210 || (r > 180 && g < 65 && b < 65) || (g > r * 1.1 && g > b * 1.5)) {
           p[i + 3] = 0;
           continue;
         }
@@ -116,20 +121,34 @@ function spriteAtlas(appearance: Appearance, source = atlasSource): Promise<stri
 }
 
 export function Fox({
+  species = 'fox',
   appearance = 'red',
   pose = 'idle',
   direction = 1,
 }: {
+  species?: PetPreferences['petSpecies'];
   appearance?: Appearance;
   pose?: PetView['pose'];
   direction?: 1 | -1;
 }) {
-  const [atlas, setAtlas] = useState<{ base: string; transitions: string }>();
+  const [atlas, setAtlas] = useState<{
+    key: string;
+    base: string;
+    transitions: string;
+    special?: string;
+  }>();
+  const atlasKey = `${species}:${appearance}`;
   useEffect(() => {
     let active = true;
-    void Promise.all([spriteAtlas(appearance), spriteAtlas(appearance, transitionSource)])
-      .then(([base, transitions]) => {
-        if (active) setAtlas({ base, transitions });
+    const sources =
+      species === 'red-panda'
+        ? [pandaAtlas, pandaTransitions]
+        : species === 'otter'
+          ? [otterAtlas, otterTransitions, otterSwimming]
+          : [atlasSource, transitionSource];
+    void Promise.all(sources.map((source) => spriteAtlas(appearance, source)))
+      .then(([base, transitions, special]) => {
+        if (active) setAtlas({ key: atlasKey, base, transitions, special });
       })
       .catch(() => {
         if (active) setAtlas(undefined);
@@ -137,15 +156,24 @@ export function Fox({
     return () => {
       active = false;
     };
-  }, [appearance]);
+  }, [appearance, species]);
   const transition = ['standing-up', 'sitting-down', 'curling-up', 'waking-up'].includes(pose);
-  const image = transition ? atlas?.transitions : atlas?.base;
+  const special = ['entering-swim', 'swimming', 'leaving-swim', 'floating'].includes(pose);
+  const ready = atlas?.key === atlasKey;
+  const image = ready
+    ? special
+      ? atlas?.special
+      : transition
+        ? atlas?.transitions
+        : atlas?.base
+    : undefined;
   return (
     <span
       className={`fox fox-${appearance} fox-${pose} fox-facing-${direction === 1 ? 'right' : 'left'}`}
       data-appearance={appearance}
+      data-species={species}
       data-pose={pose}
-      data-ready={!!atlas}
+      data-ready={ready}
       aria-hidden="true"
     >
       <span

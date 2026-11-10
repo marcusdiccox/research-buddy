@@ -18,16 +18,16 @@ export function FoxSettings({
     <section className="settings-card fox-settings-card">
       <h2>
         <Heart size={19} />
-        Pip the little fox
+        Pip the little companion
       </h2>
       <div className={`fox-settings-preview ${settings.petReducedMotion ? 'motion-reduced' : ''}`}>
         <div className="fox-preview">
-          <Fox appearance={settings.petAppearance} />
+          <Fox species={settings.petSpecies} appearance={settings.petAppearance} />
         </div>
         <p>
-          A small friend with a big tail.
+          A small friend for your desktop.
           <br />
-          Click Pip for help. Drag the fox to move it.
+          Click Pip for help. Drag to move.
         </p>
       </div>
       <fieldset className="fox-settings-fieldset" disabled={busy}>
@@ -45,16 +45,27 @@ export function FoxSettings({
         />
         <div className="fox-settings-choices">
           <label>
-            Fox appearance
+            Animal
+            <select
+              value={settings.petSpecies}
+              onChange={(e) => onChange({ petSpecies: e.target.value as Settings['petSpecies'] })}
+            >
+              <option value="fox">Fox</option>
+              <option value="red-panda">Red panda</option>
+              <option value="otter">Otter</option>
+            </select>
+          </label>
+          <label>
+            Appearance
             <select
               value={settings.petAppearance}
               onChange={(e) =>
                 onChange({ petAppearance: e.target.value as Settings['petAppearance'] })
               }
             >
-              <option value="red">Red Fox · light</option>
-              <option value="arctic">Arctic Fox · snowy white</option>
-              <option value="midnight">Midnight Fox · dark</option>
+              <option value="red">Natural</option>
+              <option value="arctic">Arctic · snowy white</option>
+              <option value="midnight">Midnight · dark</option>
             </select>
           </label>
           <label>

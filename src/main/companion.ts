@@ -381,6 +381,10 @@ export class CompanionController {
         if (this.behavior.snapshot().pose === 'sleeping') this.behavior.wake(Date.now());
         this.behavior.tellJoke(Date.now());
         break;
+      case 'play':
+        this.menuOpen = false;
+        this.behavior.play(Date.now());
+        break;
       case 'notes':
       case 'reminder':
       case 'settings':
@@ -391,7 +395,7 @@ export class CompanionController {
         this.hide();
         return;
       default:
-        throw new Error('Choose an available fox action.');
+        throw new Error('Choose an available companion action.');
     }
     this.publish(true);
   }

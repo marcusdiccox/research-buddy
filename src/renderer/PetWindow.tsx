@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { BookOpen, Bell, Settings, X } from 'lucide-react';
+import { BookOpen, Bell, Settings, X, Heart } from 'lucide-react';
+import { animalNames } from '../core/animals';
 import { Fox } from './Fox';
 import type { HitRegion, PetView } from '../shared/contracts';
 import './pet.css';
@@ -119,7 +120,7 @@ export function PetWindow() {
         ref={button}
         className="fox-pet-button"
         data-pet-hit="ellipse"
-        aria-label="Pip the fox — open notepad"
+        aria-label={`Pip the ${animalNames[view?.preferences.petSpecies ?? 'fox']} — open notepad`}
         aria-haspopup="menu"
         aria-expanded={!!view?.menuOpen}
         title={`Click for notes · right-click for tools · drag to move · ${view?.activeShortcut ? view.activeShortcut.replace('Control', 'Ctrl').replaceAll('+', ' + ') + ' to hide' : 'use the tray to hide or restore Pip'}`}
@@ -152,6 +153,7 @@ export function PetWindow() {
         }}
       >
         <Fox
+          species={view?.preferences.petSpecies}
           appearance={view?.preferences.petAppearance}
           pose={view?.pose}
           direction={view?.direction}
@@ -166,7 +168,7 @@ export function PetWindow() {
           data-pet-hit="rect"
         >
           <div className="fox-menu-title">
-            A little help, a little fox.
+            A little friend, a little help.
             <button aria-label="Close Pip menu" onClick={() => act('close-menu')}>
               <X size={13} />
             </button>
@@ -181,7 +183,15 @@ export function PetWindow() {
           </button>
           <button role="menuitem" onClick={() => act('settings')}>
             <Settings size={15} />
-            Fox settings
+            Companion settings
+          </button>
+          <button role="menuitem" onClick={() => act('play')}>
+            <Heart size={15} />
+            {view?.preferences.petSpecies === 'otter'
+              ? 'Float a little'
+              : view?.preferences.petSpecies === 'red-panda'
+                ? 'Tail hug'
+                : 'Say hello'}
           </button>
           <button role="menuitem" onClick={() => act('hide')}>
             <X size={15} />

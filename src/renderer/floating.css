@@ -249,14 +249,14 @@ html.floating-mode #root {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
   min-width: 0;
 }
 .popup-setting {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 32px;
+  min-height: 28px;
   gap: 8px;
   font-size: 12px;
 }
@@ -282,6 +282,23 @@ html.floating-mode #root {
 .settings-popup .floating-status {
   margin-top: auto;
   padding-top: 6px;
+}
+.settings-footer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  min-width: 0;
+}
+.settings-footer .floating-status {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-footer .update-check {
+  flex: 0 0 26px;
 }
 .settings-loading {
   font-size: 12px;

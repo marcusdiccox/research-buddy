@@ -402,7 +402,7 @@ export function CompactNotepad({ initialMode = 'notes' }: { initialMode?: Mode }
           <button
             className="compact-icon-button"
             aria-label="Settings"
-            title="Fox settings"
+            title="Companion settings"
             onClick={() => void run('showFoxSettings')}
             disabled={!!busy}
           >

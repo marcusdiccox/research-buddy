@@ -26,6 +26,8 @@ import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-pol
 import { EventEmitter } from 'node:events';
 import { CompanionController } from './companion.js';
 import { WindowsStartup } from './startup.js';
+import electronUpdater from 'electron-updater';
+import { UpdateController } from './updates.js';
 import { placeWritingBubble } from '../core/popover.js';
 import { CalendarSync, type CalendarConnection } from '../core/calendar-sync.js';
 import type {
@@ -51,6 +53,7 @@ const startup = new WindowsStartup(app, {
     app.isPackaged && existsSync(join(dirname(process.execPath), 'Uninstall Research Buddy.exe')),
   testMode,
 });
+let updates: UpdateController | undefined;
 let workspace: BrowserWindow | undefined,
   companion: CompanionController | undefined,
   notepad: BrowserWindow | undefined,
@@ -115,6 +118,8 @@ function baseWindow(options: Electron.BrowserWindowConstructorOptions) {
   win.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) =>
     callback(false),
   );
+  win.on('query-session-end', () => updates?.deferForSystemShutdown());
+  win.on('session-end', () => updates?.deferForSystemShutdown());
   return win;
 }
 function load(win: BrowserWindow, hash = '') {
@@ -362,6 +367,23 @@ else {
       };
       backUpNotebook();
       setInterval(backUpNotebook, 30 * 60 * 1000).unref();
+      const canUpdate =
+        !testMode &&
+        process.platform === 'win32' &&
+        app.isPackaged &&
+        existsSync(join(dirname(process.execPath), 'Uninstall Research Buddy.exe'));
+      updates = new UpdateController(electronUpdater.autoUpdater, {
+        enabled: canUpdate,
+        currentVersion: app.getVersion(),
+        onChange: changed,
+      });
+      if (canUpdate) {
+        const checkUpdates = () => {
+          if (!quitting) void updates?.check();
+        };
+        setTimeout(checkUpdates, 10000).unref();
+        setInterval(checkUpdates, 6 * 60 * 60 * 1000).unref();
+      }
       workspace = baseWindow({
         width: 1260,
         height: 850,
@@ -418,7 +440,7 @@ else {
       tray.setContextMenu(
         Menu.buildFromTemplate([
           { label: 'Open Pip’s notepad', click: () => openNotepad() },
-          { label: 'Fox settings', click: () => openNotepad('settings') },
+          { label: 'Companion settings', click: () => openNotepad('settings') },
           { label: 'All research tools', click: showWorkspace },
           {
             label: 'Show / hide Pip',
@@ -490,11 +512,15 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
           companion: companion?.status,
           calendar: calendar?.status,
           focus: focusStatus(),
+          updates: updates?.status,
         };
         break;
       }
       case 'focusStatus':
         value = focusStatus();
+        break;
+      case 'checkForUpdates':
+        value = await updates?.check();
         break;
       case 'focusStart':
         value = focus.start(data.minutes);

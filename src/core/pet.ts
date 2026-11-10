@@ -1,6 +1,8 @@
 import type { HitRegion, PetPreferences, PetView } from '../shared/contracts.js';
 import { petPhrases } from './phrases.js';
+import { animalGreetings, animalPlayLines, extraAnimalPhrases } from './animals.js';
 export const defaultPetPreferences: PetPreferences = {
+  petSpecies: 'fox',
   petAppearance: 'red',
   petRoamArea: 'bottom',
   petJokeStyle: 'wholesome',
@@ -82,6 +84,8 @@ export class PetBehavior {
   private restUntil: number;
   private walkUntil = 0;
   private pace = 18;
+  private tripPose: 'walking' | 'swimming' = 'walking';
+  private playUntil = 0;
   private entrance: { targetX: number } | null = null;
   private target: Point | null = null;
   private nextSpeech: number;
@@ -91,7 +95,7 @@ export class PetBehavior {
   private wasHovered = false;
   private transition: { until: number; next: PetView['pose'] } | null = null;
   private previousPhrase = '';
-  private phraseBags = new Map<PetPreferences['petJokeStyle'], string[]>();
+  private phraseBags = new Map<string, string[]>();
   constructor(
     public preferences: PetPreferences,
     position: Point,
@@ -111,10 +115,15 @@ export class PetBehavior {
   }
   private choosePhrase() {
     const theme = this.preferences.petJokeStyle;
-    let bag = this.phraseBags.get(theme);
+    const key = `${this.preferences.petSpecies}:${theme}`;
+    let bag = this.phraseBags.get(key);
     if (!bag?.length) {
-      bag = [...petPhrases[theme]];
-      this.phraseBags.set(theme, bag);
+      const shared =
+        this.preferences.petSpecies === 'fox'
+          ? petPhrases[theme]
+          : petPhrases[theme].filter((line) => !/\bfox\b/i.test(line));
+      bag = [...shared, ...extraAnimalPhrases(this.preferences.petSpecies, theme)];
+      this.phraseBags.set(key, bag);
     }
     let index = Math.floor(this.range(0, bag.length));
     if (bag[index] === this.previousPhrase && bag.length > 1) index = (index + 1) % bag.length;
@@ -141,6 +150,7 @@ export class PetBehavior {
     this.target = null;
   }
   resume(now: number) {
+    this.playUntil = 0;
     this.entrance = null;
     this.target = null;
     this.transition = null;
@@ -165,7 +175,16 @@ export class PetBehavior {
       } else if (previous === 'sleeping' || previous === 'curling-up') {
         kind = 'waking-up';
         duration = 1100;
-      } else if (next === 'walking' && (previous === 'idle' || previous === 'waving')) {
+      } else if (next === 'swimming') {
+        kind = 'entering-swim';
+        duration = 700;
+      } else if (previous === 'swimming') {
+        kind = 'leaving-swim';
+        duration = 650;
+      } else if (
+        next === 'walking' &&
+        (previous === 'idle' || previous === 'waving' || previous === 'floating')
+      ) {
         kind = 'standing-up';
         duration = 650;
       } else if (previous === 'walking' && (next === 'idle' || next === 'waving')) {
@@ -189,7 +208,17 @@ export class PetBehavior {
   }
   wake(now: number) {
     this.interact(now);
-    this.say('Bright eyes, bushy tail. What shall we do?', now);
+    this.say(animalGreetings[this.preferences.petSpecies], now);
+  }
+  play(now: number) {
+    this.interact(now);
+    this.say(animalPlayLines[this.preferences.petSpecies], now);
+    this.playUntil = now + 3200;
+    this.waveUntil = this.playUntil;
+    this.restUntil = this.playUntil + 600;
+    const pose = this.preferences.petSpecies === 'otter' ? 'floating' : 'waving';
+    if (this.transition) this.transition.next = pose;
+    else this.frame.pose = pose;
   }
   tellJoke(now: number) {
     this.interact(now);
@@ -297,7 +326,15 @@ export class PetBehavior {
       this.preferences.petRoamArea === 'parked' ||
       now < this.waveUntil
     ) {
-      this.setPose(now < this.waveUntil ? 'waving' : 'idle', now, flags.reducedMotion);
+      this.setPose(
+        now < this.playUntil && this.preferences.petSpecies === 'otter'
+          ? 'floating'
+          : now < this.waveUntil
+            ? 'waving'
+            : 'idle',
+        now,
+        flags.reducedMotion,
+      );
       return this.snapshot();
     }
     if (
@@ -313,6 +350,9 @@ export class PetBehavior {
         maxY = area.y + Math.max(0, area.height - size.height - 12);
       this.frame.direction = this.random() < 0.5 ? -1 : 1;
       this.pace = this.range(12, 24);
+      this.tripPose =
+        this.preferences.petSpecies === 'otter' && this.random() < 0.4 ? 'swimming' : 'walking';
+      if (this.tripPose === 'swimming') this.pace = Math.min(this.pace, 18);
       const tripDistance = Math.min(this.range(25, 180), this.pace * 8);
       if (this.preferences.petRoamArea === 'bottom') {
         if (this.frame.x - area.x < 40) this.frame.direction = 1;
@@ -344,7 +384,7 @@ export class PetBehavior {
         1000;
     }
     if (this.target) {
-      this.setPose('walking', now, flags.reducedMotion);
+      this.setPose(this.tripPose, now, flags.reducedMotion);
       if (this.transition) return this.snapshot();
       const dx = this.target.x - this.frame.x,
         dy = this.target.y - this.frame.y,

@@ -6,14 +6,16 @@ export function Pip({
   small = false,
   happy = false,
   appearance = 'red',
+  species = 'fox',
 }: {
   small?: boolean;
   happy?: boolean;
   appearance?: import('../shared/contracts').PetPreferences['petAppearance'];
+  species?: import('../shared/contracts').PetPreferences['petSpecies'];
 }) {
   return (
     <div className={`pip ${small ? 'pip-small' : ''}`} aria-hidden="true">
-      <Fox pose={happy ? 'waving' : 'idle'} appearance={appearance} />
+      <Fox pose={happy ? 'waving' : 'idle'} appearance={appearance} species={species} />
     </div>
   );
 }

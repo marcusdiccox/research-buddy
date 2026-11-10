@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 const actions = new Set([
   'snapshot',
+  'checkForUpdates',
   'focusStatus',
   'focusStart',
   'focusStop',

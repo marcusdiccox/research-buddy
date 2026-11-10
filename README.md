@@ -2,13 +2,15 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · notebook backups update 0.8.1.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · animals and automatic updates 0.9.0.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.8.1.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.0.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+
+Install 0.9.0 once to enable automatic updates. Installed Windows builds check this repository's stable GitHub releases after startup and every six hours, download updates quietly and install when you quit Pip. The small refresh button in Settings checks manually and shows update status. Shutdown/log-off defers installation. Development, unpacked and test builds do not auto-update. Source commits alone do not trigger downloads.
 
 After installation, open **Research Buddy** from the desktop or Start menu. Quitting Pip ends the current session; automatic startup opens it again when you next sign in to Windows. Uninstall removes Pip’s own startup entry.
 
@@ -26,12 +28,15 @@ The early build is unsigned. Windows may show its usual prompt for an unrecogniz
 
 Use the small notepad’s Settings button, or right-click Pip → **Fox settings**, to choose:
 
-- **Red Fox**, **Arctic Fox**, or **Midnight Fox**.
+- **Animal:** Fox, Red panda or Otter.
+- **Appearance:** Natural, Arctic or Midnight for every animal. Switching animals keeps the color.
 - **Bottom edge**, **whole screen**, or **stay where I put Pip**.
 - **Cute & wholesome**, **dad jokes & puns**, or **nerdy little jokes**.
 - Reduced motion and your preferred show/hide shortcut.
 
 Pip is smaller now: an 80px control, random 25–180px trips at 12–24px/s, with 3½–7s rests. It chooses a fresh direction each trip and turns away near the screen edges. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake. Its 97 lines are shuffled within each theme without repeats until the pool is exhausted. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
+
+The red panda hugs its ringed tail. The otter washes its cheeks and sometimes takes a slower 12–18px/s paddle, with separate transitions into and out of swimming. Right-click for **Tail hug**, **Float a little** or **Say hello**. Each animal has its own greeting and additional joke lines. Both new animals have generated four-frame movement and sit/sleep/wake transition sheets; all colors and reduced motion use the same renderer.
 
 ## Routines
 
@@ -86,7 +91,7 @@ npm run make
 
 `test:e2e` uses the compiled app, so run `build` first. `pack` creates an unpacked executable; `make` creates an NSIS installer. To run the same desktop tests against an unpacked build, set `BUDDY_EXECUTABLE` to its absolute `.exe` path before `npm run test:e2e`.
 
-Packaging never publishes a release automatically. The Windows workflow uploads its installer as a build artifact.
+Packaging never publishes by itself. The Windows workflow uploads the installer, blockmap and `latest.yml` as build artifacts. Pushing a `v*` tag that matches `package.json` publishes them together only after the Windows checks pass; an existing release is left untouched. Add release notes in `docs/releases/<tag>.md`. Update versions monotonically; don't overwrite assets clients may already have downloaded. See [electron-builder's update guide](https://www.electron.build/v26/docs/features/auto-update/).
 
 The renderer uses React and TypeScript, with an isolated preload bridge. Electron owns SQLite, file dialogs, native notifications, and fixed-host calendar actions. Modern Electron's built-in SQLite avoids a separately rebuilt native driver. Tests use temporary databases and fictional notes.
 

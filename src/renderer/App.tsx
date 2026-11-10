@@ -355,7 +355,11 @@ export default function App() {
                   <span className="spark star-one">✧</span>
                   <span className="spark star-two">✧</span>
                   <div className="art-orbit" />
-                  <Pip happy appearance={data.settings.petAppearance} />
+                  <Pip
+                    happy
+                    appearance={data.settings.petAppearance}
+                    species={data.settings.petSpecies}
+                  />
                   <div className="pip-caption">Hi, I’m Pip. Let’s make sense of it.</div>
                   <span className="art-flower">✳</span>
                 </div>
