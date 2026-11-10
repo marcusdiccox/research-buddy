@@ -157,7 +157,12 @@ test('settings open separately with working fox controls and fit their compact w
   expect(Math.abs(geometry.size[0] - 340)).toBeLessThanOrEqual(2);
   expect(Math.abs(geometry.size[1] - 400)).toBeLessThanOrEqual(2);
 
-  await settings.getByLabel('Start with Windows', { exact: true }).check();
+  const startWithWindows = settings.getByLabel('Start with Windows', { exact: true });
+  // These controlled inputs update after the asynchronous save and refresh.
+  // check()/uncheck() require the new state immediately after dispatching a click.
+  await startWithWindows.click();
+  await expect(startWithWindows).toBeChecked();
+  await expect(startWithWindows).toBeEnabled();
   await expect
     .poll(
       async () =>
@@ -165,7 +170,15 @@ test('settings open separately with working fox controls and fit their compact w
           .startWithWindows,
     )
     .toBe(true);
-  await settings.getByLabel('Start with Windows', { exact: true }).uncheck();
+  await startWithWindows.click();
+  await expect(startWithWindows).not.toBeChecked();
+  await expect
+    .poll(
+      async () =>
+        (await settings.evaluate(() => window.buddy!.call<any>('snapshot'))).settings
+          .startWithWindows,
+    )
+    .toBe(false);
   await settings.getByLabel('Appearance').selectOption('arctic');
   await expect
     .poll(
