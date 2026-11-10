@@ -2,13 +2,13 @@
 
 **Pip is a little fox who lives on your desktop.** This tiny pixel fox strolls, blinks, waves, stretches awake, tells gentle jokes, and offers a paw when you need one. Click the fox for your notes, research, and reminders.
 
-**Status: early Windows build · Windows startup update 0.8.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · notebook backups update 0.8.1.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.8.0.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.8.1.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
 
 After installation, open **Research Buddy** from the desktop or Start menu. Quitting Pip ends the current session; automatic startup opens it again when you next sign in to Windows. Uninstall removes Pip’s own startup entry.
 
@@ -60,7 +60,7 @@ All note processing in this build happens on your device. No research is sent to
 
 Data is saved in an ordinary, unencrypted SQLite file in Electron's user-data directory, normally `%APPDATA%/Research Buddy/research.sqlite`. Exported Markdown is also plaintext. Keep sensitive research on a trusted computer.
 
-**Automatic local backups (source update):** Pip takes a verified notebook snapshot on startup and checks every 30 minutes while running, at most once per UTC date. The latest seven daily snapshots live in `%APPDATA%/Research Buddy/backups/`. Each includes notes, reminders, settings and notebook history. A failed backup leaves previous snapshots intact and does not stop Pip opening. Snapshots are unencrypted, stay on this computer and can be up to a day old while Pip runs; a closed app cannot create backups. A restore screen and protection against disk loss are future work. The published 0.8.0 installer predates this update; use a build from the updated source to get backups.
+**Automatic local backups:** Pip takes a verified notebook snapshot on startup and checks every 30 minutes while running, at most once per UTC date. The latest seven daily snapshots live in `%APPDATA%/Research Buddy/backups/`. Each includes notes, reminders, settings and notebook history. A failed backup leaves previous snapshots intact and does not stop Pip opening. Snapshots are unencrypted, stay on this computer and can be up to a day old while Pip runs; a closed app cannot create backups. A restore screen and protection against disk loss are future work. Available in the 0.8.1 installer and later builds.
 
 Imports support up to 2 MiB and 100,000 Unicode code points. Publication dates are optional and separate from save dates. The app does not fetch source URLs or provide live prices. PDF/OCR, permanent erasure/workspace deletion, cloud sync and a backup restore screen are not included yet.
 
