@@ -2,13 +2,13 @@
 
 **Pip is a little friend who lives on your desktop.** Choose a fox, red panda or otter to stroll, blink, stretch awake, tell gentle jokes and offer a paw when you need one. Click Pip for your notes, research and reminders.
 
-**Status: early Windows build · floating focus timer update 0.9.1.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · companion visibility fix 0.9.2.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.1.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.2.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
 
 Install 0.9.0 or newer once to enable automatic updates. Installed Windows builds check this repository's stable GitHub releases after startup and every six hours, download updates quietly and install when you quit Pip. The small refresh button in Settings checks manually and shows update status. Shutdown/log-off defers installation. Development, unpacked and test builds do not auto-update. Source commits alone do not trigger downloads.
 

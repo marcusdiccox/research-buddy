@@ -10,6 +10,31 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 let app: ElectronApplication, dir: string, notebook: Page, pet: Page;
+
+test('Pip remains above ordinary windows after showing and changing settings', async () => {
+  const nativeState = () =>
+    app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows().find((w) =>
+        w.webContents.getURL().endsWith('#pet'),
+      )!;
+      return { visible: window.isVisible(), top: window.isAlwaysOnTop() };
+    });
+  await notebook.evaluate(() => window.buddy!.call('settings', { petVisible: false }));
+  await notebook.evaluate(() =>
+    window.buddy!.call('settings', { petVisible: true, alwaysOnTop: true }),
+  );
+  await expect.poll(nativeState).toEqual({ visible: true, top: true });
+  await notebook.evaluate(() => window.buddy!.call('settings', { petJokeStyle: 'nerdy' }));
+  await expect.poll(nativeState).toEqual({ visible: true, top: true });
+  await notebook.evaluate(() => window.buddy!.call('settings', { alwaysOnTop: false }));
+  await expect.poll(nativeState).toEqual({ visible: true, top: false });
+  await notebook.evaluate(() =>
+    window.buddy!.call('settings', { alwaysOnTop: true, petVisible: false }),
+  );
+  await expect.poll(nativeState).toEqual({ visible: false, top: true });
+  await notebook.evaluate(() => window.buddy!.call('settings', { petVisible: true }));
+  await expect.poll(nativeState).toEqual({ visible: true, top: true });
+});
 test.beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), 'fox-e2e-'));
   app = await electron.launch({

@@ -90,6 +90,12 @@ export class CompanionController {
   get status() {
     return { shortcutAvailable: this.binding.available, activeShortcut: this.binding.active };
   }
+  private applyStacking() {
+    if (!this.window || this.window.isDestroyed()) return;
+    const pinned = this.options.store.settings().alwaysOnTop;
+    // Windows can leave the default floating level underneath other app windows.
+    this.window.setAlwaysOnTop(pinned, pinned ? 'pop-up-menu' : 'normal');
+  }
   get view(): PetView {
     const frame = this.behavior.snapshot();
     return {
@@ -165,6 +171,7 @@ export class CompanionController {
     void this.options.loadWindow(window, 'pet').then(() => {
       this.publish(true);
       if (this.visible && this.options.autoShow) window.showInactive();
+      this.applyStacking();
     });
     return window;
   }
@@ -176,7 +183,7 @@ export class CompanionController {
       if (settings.petVisible) this.show();
       else this.hide();
     }
-    this.window?.setAlwaysOnTop(settings.alwaysOnTop);
+    this.applyStacking();
     this.publish(true);
     this.options.onChange();
   }
@@ -194,6 +201,7 @@ export class CompanionController {
       window.setBounds({ x: Math.round(frame.x), y: Math.round(frame.y), ...petWindowSize });
     }
     window.showInactive();
+    this.applyStacking();
     this.publish(true);
     this.options.onChange();
   }
