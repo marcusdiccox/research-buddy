@@ -4,6 +4,12 @@ export interface FocusStatus {
   endsAt: string | null;
   remainingSeconds: number;
 }
+export interface FocusPanelStatus extends FocusStatus {
+  pinned: boolean;
+  durationSeconds: number;
+  completed: boolean;
+  reducedMotion: boolean;
+}
 export interface Project {
   id: string;
   name: string;
@@ -101,6 +107,7 @@ export interface PetPreferences {
   petShortcut: 'Control+Alt+P' | 'Control+Shift+Space' | 'Alt+Shift+P';
 }
 export interface Settings extends PetPreferences {
+  focusPinned: boolean;
   startWithWindows: boolean;
   petVisible: boolean;
   alwaysOnTop: boolean;

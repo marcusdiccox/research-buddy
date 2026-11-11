@@ -1,0 +1,204 @@
+.focus-floating {
+  height: 100%;
+  padding: 10px;
+  color: #344b40;
+  user-select: none;
+}
+.focus-card {
+  height: 100%;
+  padding: 10px 15px 11px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #d5decd;
+  border-radius: 21px;
+  background: radial-gradient(ellipse at 100% 0, #eaf0e2 0, transparent 65%), #fffdf7;
+  box-shadow:
+    0 3px 9px #24463124,
+    inset 0 1px 0 #ffffffc0;
+  -webkit-app-region: no-drag;
+  touch-action: none;
+  cursor: grab;
+}
+.focus-card:active {
+  cursor: grabbing;
+}
+.focus-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 21px;
+  flex-shrink: 0;
+}
+.focus-card h1 {
+  margin: 0;
+  font:
+    650 11px 'Segoe UI',
+    sans-serif;
+  letter-spacing: 1.5px;
+  color: #60795f;
+}
+.focus-card-controls {
+  display: flex;
+  gap: 1px;
+}
+.focus-card-controls button {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5b735d;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.focus-card-controls button:hover {
+  background: #dfe8d7;
+}
+.focus-card-controls button:focus-visible {
+  outline: 2px solid #63856b;
+  outline-offset: 1px;
+}
+.focus-pin {
+  opacity: 0;
+}
+.focus-card:hover .focus-pin,
+.focus-pin:focus-visible {
+  opacity: 1;
+}
+.focus-hide {
+  opacity: 0.45;
+}
+.focus-hide:hover,
+.focus-hide:focus-visible {
+  opacity: 1;
+}
+.focus-card-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0 3px;
+}
+.floating-countdown {
+  display: block;
+  font:
+    450 38px/1.05 'Segoe UI',
+    sans-serif;
+  letter-spacing: -1.8px;
+  font-variant-numeric: tabular-nums;
+  color: #2f493c;
+}
+.focus-card-display p {
+  margin: 5px 0 0;
+  font-size: 10px;
+  color: #87917c;
+  letter-spacing: 0.1px;
+}
+.focus-ring {
+  width: 57px;
+  height: 57px;
+  position: relative;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.focus-ring > svg:first-child {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-width: 2.5;
+}
+.focus-ring-track {
+  stroke: #dfe8d7;
+}
+.focus-ring-fill {
+  stroke: #7c9d78;
+  stroke-linecap: round;
+}
+.focus-ring > svg:last-child {
+  color: #78966f;
+}
+.focus-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 25px;
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+.focus-quiet {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #7f8b75;
+  font-size: 10px;
+}
+.focus-quiet i {
+  width: 4px;
+  height: 4px;
+  background: #8da480;
+  border-radius: 50%;
+}
+.focus-session-action {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid #dbe3d2;
+  border-radius: 8px;
+  background: #f2f5eb;
+  color: #53724f;
+  font:
+    550 10px 'Segoe UI',
+    sans-serif;
+  cursor: pointer;
+}
+.focus-session-action:hover {
+  background: #e5edda;
+}
+.focus-session-action:focus-visible,
+.focus-card-footer select:focus-visible {
+  outline: 2px solid #63856b;
+  outline-offset: 2px;
+}
+.focus-card-footer select {
+  width: 66px;
+  padding: 3px 0;
+  border: 0;
+  color: #698164;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+}
+.focus-card-error {
+  position: absolute;
+  inset: auto 16px 5px;
+  margin: 0;
+  font-size: 10px;
+  color: #914e3c;
+  background: #fffdf7;
+  -webkit-app-region: no-drag;
+}
+.is-complete .focus-ring-fill {
+  stroke: #62875c;
+}
+.quick-bubble .bubble-pin {
+  opacity: 0;
+}
+.quick-bubble:hover .bubble-pin,
+.quick-bubble .bubble-pin:focus-visible {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-floating * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

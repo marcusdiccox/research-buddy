@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FocusStatus } from '../shared/contracts';
+import { ExternalLink } from 'lucide-react';
 import './focus.css';
 
 const message = (error: unknown) =>
@@ -85,6 +86,18 @@ export function FocusTimer({ className = '' }: { className?: string }) {
             </option>
           ))}
         </select>
+      )}
+      {status?.active && (
+        <button
+          type="button"
+          aria-label="Show focus timer"
+          title="Show floating timer"
+          onClick={() =>
+            void window.buddy?.call('showFocusTimer').catch((failure) => setError(message(failure)))
+          }
+        >
+          <ExternalLink size={12} />
+        </button>
       )}
       <button
         type="button"

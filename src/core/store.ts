@@ -28,6 +28,7 @@ const defaults: Settings = {
   notifications: true,
   providerConsent: false,
   bubblePinned: false,
+  focusPinned: true,
   startWithWindows: false,
 };
 interface CheckpointState {
@@ -278,6 +279,7 @@ export class BuddyStore {
                 'providerConsent',
                 'petReducedMotion',
                 'bubblePinned',
+                'focusPinned',
                 'startWithWindows',
               ].includes(key)
             ? typeof value === 'boolean'

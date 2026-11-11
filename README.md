@@ -2,15 +2,15 @@
 
 **Pip is a little friend who lives on your desktop.** Choose a fox, red panda or otter to stroll, blink, stretch awake, tell gentle jokes and offer a paw when you need one. Click Pip for your notes, research and reminders.
 
-**Status: early Windows build · animals and automatic updates 0.9.0.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows build · floating focus timer update 0.9.1.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.0.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.1.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
 
-Install 0.9.0 once to enable automatic updates. Installed Windows builds check this repository's stable GitHub releases after startup and every six hours, download updates quietly and install when you quit Pip. The small refresh button in Settings checks manually and shows update status. Shutdown/log-off defers installation. Development, unpacked and test builds do not auto-update. Source commits alone do not trigger downloads.
+Install 0.9.0 or newer once to enable automatic updates. Installed Windows builds check this repository's stable GitHub releases after startup and every six hours, download updates quietly and install when you quit Pip. The small refresh button in Settings checks manually and shows update status. Shutdown/log-off defers installation. Development, unpacked and test builds do not auto-update. Source commits alone do not trigger downloads.
 
 After installation, open **Research Buddy** from the desktop or Start menu. Quitting Pip ends the current session; automatic startup opens it again when you next sign in to Windows. Uninstall removes Pip’s own startup entry.
 
@@ -41,8 +41,10 @@ The red panda hugs its ringed tail. The otter washes its cheeks and sometimes ta
 ## Routines
 
 - **Repeating reminders:** None, Daily, Weekdays, Weekly or Monthly. Mark done advances the same reminder to its next future local occurrence, retaining the five warning checkpoints. Monthly dates clamp short months and retain the original day. A nonexistent DST time is skipped. Google sync updates the same event to its next occurrence; it does not create a Google recurring series.
-- **Quiet focus:** start 15, 25 or 45 minutes from Notes or the notebook. Pip settles and pauses casual speech; event reminders continue. Stop anytime. Quitting ends the session.
+- **Quiet focus:** start 15, 25 or 45 minutes from Notes or the notebook. A small ivory-and-sage countdown card pops up without taking focus from your notes. Drag anywhere on the card to move it; hover or use keyboard focus to reveal its pin. Pinning keeps it above other apps. Hide the card without stopping, then restore it with the inline pop-out button or tray's **Focus timer**. Stop from either window. Completion shows **Nice work.** Pip settles and pauses casual speech; event reminders continue. Quitting ends the session.
 - **Natural dates:** open the date picker and type “tomorrow at 3pm”, “next Friday at 09:00” or “in 30 minutes”. Preview, Use date, then Done. Explicit am/pm or 24-hour time avoids ambiguity. Parsing stays local; unsupported input gives feedback.
+
+![Pip's floating focus timer with its pin hidden](docs/screenshots/floating-focus-timer.png)
 
 ## What works
 

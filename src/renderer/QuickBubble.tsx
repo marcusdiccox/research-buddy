@@ -241,7 +241,7 @@ export function QuickBubble() {
           <div className="floating-header-actions">
             <button
               type="button"
-              className="floating-icon"
+              className="floating-icon bubble-pin"
               aria-label={data?.settings.bubblePinned ? 'Unpin note' : 'Pin note'}
               aria-pressed={!!data?.settings.bubblePinned}
               title={data?.settings.bubblePinned ? 'Unpin' : 'Keep pinned'}

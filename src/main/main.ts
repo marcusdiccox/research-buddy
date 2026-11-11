@@ -22,6 +22,7 @@ import { exportDossier } from '../core/export.js';
 import { deliverScheduledReminders } from '../core/notifications.js';
 import { ReminderChannel } from '../core/reminder-channel.js';
 import { FocusSession } from '../core/focus.js';
+import { FocusWindow } from './focus-window.js';
 import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
 import { EventEmitter } from 'node:events';
 import { CompanionController } from './companion.js';
@@ -76,6 +77,9 @@ const notices = new Set<Notification>();
 const foregroundReminders = new ReminderChannel();
 // Focus deliberately stays in memory: quitting ends the session.
 const focus = new FocusSession();
+let focusPanel: FocusWindow | undefined;
+let focusMinutes = 25;
+let focusCompleted = false;
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
   if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
@@ -84,6 +88,7 @@ function changed() {
 function focusStatus() {
   const now = Date.now();
   if (focus.tick(now)) {
+    focusCompleted = true;
     companion?.setFocusActive(false);
     if (companion?.canRemind)
       companion.remind(
@@ -361,6 +366,19 @@ else {
       const databasePath = join(app.getPath('userData'), 'research.sqlite');
       db = new BuddyStore(databasePath);
       if (!db.snapshot().projects.length) db.createProject({ name: 'My notebook' });
+      focusPanel = new FocusWindow({
+        createWindow: baseWindow,
+        load,
+        pinned: () => db.settings().focusPinned,
+        quitting: () => quitting,
+        cursor: () => screen.getCursorScreenPoint(),
+        workArea: () =>
+          screen.getDisplayMatching(
+            focusPanel?.window?.getBounds() ??
+              companion?.window?.getBounds() ??
+              screen.getPrimaryDisplay().workArea,
+          ).workArea,
+      });
       const backUpNotebook = () => {
         const result = backupNotebook(databasePath);
         if (result.status === 'failed') console.warn('Notebook backup failed:', result.message);
@@ -442,6 +460,7 @@ else {
           { label: 'Open Pip’s notepad', click: () => openNotepad() },
           { label: 'Companion settings', click: () => openNotepad('settings') },
           { label: 'All research tools', click: showWorkspace },
+          { label: 'Focus timer', click: () => void focusPanel?.show(true) },
           {
             label: 'Show / hide Pip',
             click: () => {
@@ -459,8 +478,14 @@ else {
         ]),
       );
       tray.on('double-click', () => openNotepad());
-      screen.on('display-removed', () => companion?.clamp());
-      screen.on('display-metrics-changed', () => companion?.clamp());
+      screen.on('display-removed', () => {
+        companion?.clamp();
+        focusPanel?.clamp();
+      });
+      screen.on('display-metrics-changed', () => {
+        companion?.clamp();
+        focusPanel?.clamp();
+      });
       setInterval(deliverForegroundReminders, 250).unref();
       setInterval(focusStatus, 250).unref();
       setInterval(notifyDue, 15000).unref();
@@ -474,6 +499,7 @@ else {
 app.on('before-quit', () => {
   quitting = true;
   focus.stop();
+  focusPanel?.endDrag();
   companion?.dispose();
   calendar?.dispose();
 });
@@ -487,7 +513,14 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
   const sender = BrowserWindow.fromWebContents(event.sender);
   if (
     !sender ||
-    ![workspace, companion?.window, notepad, foxSettings, writingBubble].includes(sender) ||
+    ![
+      workspace,
+      companion?.window,
+      notepad,
+      foxSettings,
+      writingBubble,
+      focusPanel?.window,
+    ].includes(sender) ||
     event.senderFrame !== event.sender.mainFrame
   )
     return { ok: false, error: 'This action is not available.' };
@@ -519,15 +552,48 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       case 'focusStatus':
         value = focusStatus();
         break;
+      case 'focusPanelStatus':
+        value = {
+          ...focusStatus(),
+          durationSeconds: focusMinutes * 60,
+          completed: focusCompleted,
+          pinned: db.settings().focusPinned,
+          reducedMotion: db.settings().petReducedMotion,
+        };
+        break;
+      case 'showFocusTimer':
+        await focusPanel?.show(true);
+        value = true;
+        break;
+      case 'hideFocusTimer':
+        focusPanel?.hide();
+        value = true;
+        break;
+      case 'focusDrag':
+        if (sender !== focusPanel?.window || typeof data.dragging !== 'boolean')
+          throw new Error('Drag from the focus timer.');
+        if (data.dragging) focusPanel.startDrag(Number(data.clientX), Number(data.clientY));
+        else {
+          focusPanel.endDrag(true);
+          focusPanel.clamp();
+        }
+        value = true;
+        break;
       case 'checkForUpdates':
         value = await updates?.check();
         break;
       case 'focusStart':
         value = focus.start(data.minutes);
+        focusMinutes = data.minutes as number;
+        focusCompleted = false;
         companion?.setFocusActive(true);
+        await focusPanel?.show();
+        value = focusStatus();
         break;
       case 'focusStop':
         value = focus.stop();
+        focusCompleted = false;
+        focusPanel?.hide();
         companion?.setFocusActive(false);
         break;
       case 'createLibraryGroup':
@@ -664,6 +730,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         }
         value = { ...saved, startWithWindows: startup.status(saved.startWithWindows) };
         writingBubble?.setAlwaysOnTop(saved.bubblePinned || saved.alwaysOnTop);
+        focusPanel?.setPinned(saved.focusPinned);
         companion?.configure();
         break;
       }
@@ -815,6 +882,8 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
       ![
         'snapshot',
         'focusStatus',
+        'focusPanelStatus',
+        'focusDrag',
         'revision',
         'calendarPreview',
         'calendarStatus',
