@@ -100,7 +100,11 @@ export function FoxSettings({
           after a moment.
         </p>
         <SettingToggle
-          label="Start with Windows"
+          label={
+            navigator.platform.toLowerCase().includes('mac')
+              ? 'Open at login'
+              : 'Start with Windows'
+          }
           detail="Pip opens automatically when you sign in."
           checked={settings.startWithWindows}
           onChange={(value) => onChange({ startWithWindows: value })}

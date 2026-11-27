@@ -17,6 +17,8 @@ public static class PipCapture {
  public static bool Copy() { INPUT[] a=new INPUT[4]; ushort[] keys={0x11,0x43,0x43,0x11}; for(int i=0;i<4;i++){a[i].type=1;a[i].data.ki.vk=keys[i];a[i].data.ki.flags=(uint)(i>=2?2:0);} return SendInput(4,a,Marshal.SizeOf(typeof(INPUT)))==4; }
 }
 '@
+} catch { [Console]::WriteLine('{"ready":false}'); exit }
+function Get-PipCaptureResult {
 $foreground = [PipCapture]::GetForegroundWindow()
 $deadline = [DateTime]::UtcNow.AddSeconds(2)
 do {
@@ -25,21 +27,25 @@ do {
  if(-not $held){break}
  Start-Sleep -Milliseconds 15
 } while([DateTime]::UtcNow -lt $deadline)
-if($held){ @{error='keys_held'}|ConvertTo-Json -Compress; exit }
-if($foreground -ne [PipCapture]::GetForegroundWindow()) { @{error='foreground_changed'}|ConvertTo-Json -Compress; exit }
+if($held){ @{error='keys_held'}|ConvertTo-Json -Compress; return }
+if($foreground -ne [PipCapture]::GetForegroundWindow()) { @{error='foreground_changed'}|ConvertTo-Json -Compress; return }
 $sequence = [PipCapture]::GetClipboardSequenceNumber()
-if(-not [PipCapture]::Copy()){ @{error='copy_failed'}|ConvertTo-Json -Compress; exit }
+if(-not [PipCapture]::Copy()){ @{error='copy_failed'}|ConvertTo-Json -Compress; return }
 $deadline = [DateTime]::UtcNow.AddMilliseconds(1200)
 do {
  Start-Sleep -Milliseconds 25
- if($foreground -ne [PipCapture]::GetForegroundWindow()){ @{error='foreground_changed'}|ConvertTo-Json -Compress; exit }
+ if($foreground -ne [PipCapture]::GetForegroundWindow()){ @{error='foreground_changed'}|ConvertTo-Json -Compress; return }
  if([PipCapture]::GetClipboardSequenceNumber() -ne $sequence) {
   if([System.Windows.Forms.Clipboard]::ContainsText()) {
    $text=[System.Windows.Forms.Clipboard]::GetText()
-   if($text.Length -gt 200000){ @{error='too_long'}|ConvertTo-Json -Compress; exit }
-   @{fresh=$true;text=$text}|ConvertTo-Json -Compress; exit
+   if($text.Length -gt 200000){ @{error='too_long'}|ConvertTo-Json -Compress; return }
+   @{fresh=$true;text=$text}|ConvertTo-Json -Compress; return
   }
  }
 } while([DateTime]::UtcNow -lt $deadline)
 @{error='no_selection'}|ConvertTo-Json -Compress
-} catch { @{error='copy_failed'}|ConvertTo-Json -Compress }
+}
+[Console]::WriteLine('{"ready":true}')
+while(($command=[Console]::ReadLine()) -ne $null) {
+ if($command -eq 'capture') { try { Get-PipCaptureResult } catch { @{error='copy_failed'}|ConvertTo-Json -Compress } }
+}

@@ -87,7 +87,7 @@ const focus = new FocusSession();
 let focusPanel: FocusWindow | undefined;
 let focusMinutes = 25;
 let focusCompleted = false;
-const selectionCapture = new SelectionCapture(join(here, '../../assets'));
+const selectionCapture = new SelectionCapture(join(here, '../../assets'), !testMode);
 const captureShortcut = 'CommandOrControl+Alt+N';
 let captureShortcutAvailable = false;
 let pendingCapture: CapturePayload | null = null;

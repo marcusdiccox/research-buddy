@@ -50,7 +50,7 @@ jobs:
         run: |
           APP="release/mac-universal/Research Buddy.app/Contents/MacOS/Research Buddy"
           test -f "$APP"
-          lipo -verify_arch x86_64 arm64 "$APP"
+          lipo "$APP" -verify_arch x86_64 arm64
           BUDDY_EXECUTABLE="$PWD/$APP" npx playwright test tests/e2e/capture-play-today.spec.ts
       - uses: actions/upload-artifact@v4
         with:
