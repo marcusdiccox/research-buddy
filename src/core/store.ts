@@ -283,7 +283,11 @@ export class BuddyStore {
                 'startWithWindows',
               ].includes(key)
             ? typeof value === 'boolean'
-            : ['petX', 'petY'].includes(key) && typeof value === 'number' && Number.isFinite(value),
+            : key === 'lastTodayDate'
+              ? typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+              : ['petX', 'petY'].includes(key) &&
+                typeof value === 'number' &&
+                Number.isFinite(value),
       ),
     );
     const settings = { ...this.settings(), ...allowed };

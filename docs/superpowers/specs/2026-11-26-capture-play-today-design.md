@@ -1,6 +1,6 @@
 # Quick capture, pet play, Today and No jokes
 
-Status: proposed for user review. No product implementation has started.
+Status: approved by the user November 26, 2026, including installation on their computer.
 
 ## Intent
 

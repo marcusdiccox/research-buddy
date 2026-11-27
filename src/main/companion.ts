@@ -403,6 +403,7 @@ export class CompanionController {
         this.behavior.startInteraction(action, Date.now(), this.systemReduced);
         break;
       case 'notes':
+      case 'today':
       case 'reminder':
       case 'settings':
         this.behavior.cancelInteraction();

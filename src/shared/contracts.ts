@@ -107,6 +107,7 @@ export interface PetPreferences {
   petShortcut: 'Control+Alt+P' | 'Control+Shift+Space' | 'Alt+Shift+P';
 }
 export interface Settings extends PetPreferences {
+  lastTodayDate?: string;
   focusPinned: boolean;
   startWithWindows: boolean;
   petVisible: boolean;
@@ -139,6 +140,8 @@ export interface LibrarySnapshot {
   trash: { notes: Note[]; reminders: Reminder[] };
 }
 export interface Snapshot {
+  platform?: string;
+  capture?: { shortcutAvailable: boolean; shortcutLabel: string };
   updates?: UpdateStatus;
   focus?: FocusStatus;
   library: LibrarySnapshot;
@@ -153,6 +156,7 @@ export interface Snapshot {
   calendar?: CalendarStatus;
 }
 export interface UpdateStatus {
+  manual?: boolean;
   phase:
     | 'unsupported'
     | 'idle'
@@ -196,7 +200,8 @@ export interface HitRegion {
   height: number;
   shape: 'rect' | 'ellipse';
 }
-export type NotebookAction = 'notes' | 'reminder' | 'calendar' | 'settings' | 'library';
+export type NotebookAction =
+  'notes' | 'reminder' | 'calendar' | 'settings' | 'library' | 'today' | 'capture';
 export type NotebookItem =
   { kind: 'note'; note: Note } | { kind: 'reminder' | 'calendar'; reminder: Reminder };
 export interface NotebookLaunch {

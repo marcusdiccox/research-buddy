@@ -10,6 +10,8 @@ import {
   nativeImage,
   screen,
   safeStorage,
+  clipboard,
+  globalShortcut,
 } from 'electron';
 import { join, dirname, basename, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +24,9 @@ import { exportDossier } from '../core/export.js';
 import { deliverScheduledReminders } from '../core/notifications.js';
 import { ReminderChannel } from '../core/reminder-channel.js';
 import { FocusSession } from '../core/focus.js';
+import { localDayKey, ordinaryBubbleMode } from '../core/today.js';
+import { SelectionCapture } from './capture.js';
+import { validateCapture, type CapturePayload } from '../core/capture.js';
 import { FocusWindow } from './focus-window.js';
 import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
 import { EventEmitter } from 'node:events';
@@ -51,7 +56,9 @@ const startup = new WindowsStartup(app, {
   executable: process.execPath,
   platform: process.platform,
   installed:
-    app.isPackaged && existsSync(join(dirname(process.execPath), 'Uninstall Research Buddy.exe')),
+    app.isPackaged &&
+    (process.platform === 'darwin' ||
+      existsSync(join(dirname(process.execPath), 'Uninstall Research Buddy.exe'))),
   testMode,
 });
 let updates: UpdateController | undefined;
@@ -70,7 +77,7 @@ let notepadReady: Promise<void> | undefined,
 let bubbleLayout = {
   tailX: 180,
   tailSide: 'bottom' as 'top' | 'bottom',
-  action: 'notes' as 'notes' | 'reminder' | 'calendar',
+  action: 'notes' as 'notes' | 'reminder' | 'calendar' | 'today' | 'capture',
 };
 let notebookLaunch: NotebookLaunch = { action: 'notes' };
 const notices = new Set<Notification>();
@@ -80,6 +87,11 @@ const focus = new FocusSession();
 let focusPanel: FocusWindow | undefined;
 let focusMinutes = 25;
 let focusCompleted = false;
+const selectionCapture = new SelectionCapture(join(here, '../../assets'));
+const captureShortcut = 'CommandOrControl+Alt+N';
+let captureShortcutAvailable = false;
+let pendingCapture: CapturePayload | null = null;
+let captureRunning = false;
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
   if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
@@ -200,7 +212,9 @@ async function showFoxSettings() {
   foxSettings.show();
   foxSettings.focus();
 }
-async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
+async function showBubble(
+  action: 'notes' | 'reminder' | 'calendar' | 'today' | 'capture' = 'notes',
+) {
   bubbleLayout = { ...bubbleLayout, action };
   if (!db.settings().petVisible) companion?.show();
   if (!writingBubble || writingBubble.isDestroyed()) {
@@ -252,9 +266,11 @@ async function showBubble(action: 'notes' | 'reminder' | 'calendar' = 'notes') {
   writingBubble.show();
   writingBubble.focus();
   writingBubble.webContents.send('buddy:navigate', action);
+  if (action === 'today') db.saveSettings({ lastTodayDate: localDayKey(new Date()) });
   changed();
 }
 function openNotepad(action: NotebookAction = 'notes') {
+  if (action === 'notes') action = ordinaryBubbleMode(db.settings().lastTodayDate, new Date());
   void (
     action === 'settings'
       ? showFoxSettings()
@@ -264,6 +280,27 @@ function openNotepad(action: NotebookAction = 'notes') {
   ).catch(() =>
     dialog.showErrorBox('Pip could not open', 'Please restart Research Buddy and try again.'),
   );
+}
+async function captureText(copied = false) {
+  if (captureRunning || pendingCapture) return;
+  captureRunning = true;
+  try {
+    let payload: CapturePayload;
+    if (copied) {
+      try {
+        payload = { text: validateCapture(await clipboard.readText()) };
+      } catch (error) {
+        payload = {
+          error: error instanceof Error ? error.message : 'Could not capture that text.',
+        };
+      }
+    } else payload = await selectionCapture.capture();
+    if (quitting) return;
+    pendingCapture = payload;
+    await showBubble('capture');
+  } finally {
+    captureRunning = false;
+  }
 }
 function broadcastReminder(message: string) {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -453,11 +490,17 @@ else {
         onChange: changed,
         autoShow: !testMode,
       });
+      captureShortcutAvailable = globalShortcut.register(
+        captureShortcut,
+        () => void captureText().catch(() => {}),
+      );
       tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 }));
       tray.setToolTip('Research Buddy');
       tray.setContextMenu(
         Menu.buildFromTemplate([
           { label: 'Open Pip’s notepad', click: () => openNotepad() },
+          { label: 'Today', click: () => openNotepad('today') },
+          { label: 'Capture copied text', click: () => void captureText(true).catch(() => {}) },
           { label: 'Companion settings', click: () => openNotepad('settings') },
           { label: 'All research tools', click: showWorkspace },
           { label: 'Focus timer', click: () => void focusPanel?.show(true) },
@@ -498,6 +541,8 @@ else {
 }
 app.on('before-quit', () => {
   quitting = true;
+  selectionCapture.dispose();
+  if (captureShortcutAvailable) globalShortcut.unregister(captureShortcut);
   focus.stop();
   focusPanel?.endDrag();
   companion?.dispose();
@@ -538,6 +583,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         const snapshot = db.snapshot();
         value = {
           ...snapshot,
+          platform: process.platform,
           settings: {
             ...snapshot.settings,
             startWithWindows: startup.status(snapshot.settings.startWithWindows),
@@ -545,7 +591,13 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
           companion: companion?.status,
           calendar: calendar?.status,
           focus: focusStatus(),
-          updates: updates?.status,
+          updates: updates
+            ? { ...updates.status, manual: process.platform === 'darwin' }
+            : undefined,
+          capture: {
+            shortcutAvailable: captureShortcutAvailable,
+            shortcutLabel: process.platform === 'darwin' ? '⌘ + Option + N' : 'Ctrl + Alt + N',
+          },
         };
         break;
       }
@@ -776,13 +828,28 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         break;
       case 'showBubble':
         await showBubble(
-          data.action === 'calendar'
-            ? 'calendar'
-            : data.action === 'reminder'
-              ? 'reminder'
-              : 'notes',
+          data.action === 'today'
+            ? 'today'
+            : data.action === 'calendar'
+              ? 'calendar'
+              : data.action === 'reminder'
+                ? 'reminder'
+                : 'notes',
         );
         value = true;
+        break;
+      case 'captureCopiedText':
+        await captureText(true);
+        value = true;
+        break;
+      case 'openReleaseDownloads':
+        await shell.openExternal('https://github.com/marcusdiccox/research-buddy/releases/latest');
+        value = true;
+        break;
+      case 'takeCapture':
+        if (sender !== writingBubble) throw new Error('Open capture from Pip’s note bubble.');
+        value = pendingCapture;
+        pendingCapture = null;
         break;
       case 'hideBubble':
         writingBubble?.hide();
@@ -895,6 +962,7 @@ ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
         'petDrag',
         'petSystemMotion',
         'petAction',
+        'takeCapture',
       ].includes(action)
     )
       changed();

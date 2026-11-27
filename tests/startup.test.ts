@@ -42,6 +42,25 @@ function fixture(options: Partial<ConstructorParameters<typeof WindowsStartup>[1
 }
 
 describe('Windows startup preference', () => {
+  it('uses native macOS login preferences without Windows registry assumptions', () => {
+    let open = false;
+    const adapter: LoginItemAdapter = {
+      getLoginItemSettings: () => ({ openAtLogin: open, launchItems: [] }),
+      setLoginItemSettings: (value) => {
+        open = !!value.openAtLogin;
+      },
+    };
+    const startup = new WindowsStartup(adapter, {
+      executable: '/Applications/Research Buddy.app/Contents/MacOS/Research Buddy',
+      platform: 'darwin',
+      installed: true,
+      testMode: false,
+    });
+    expect(startup.status()).toBe(false);
+    expect(startup.set(true)).toBe(true);
+    expect(startup.status()).toBe(true);
+    expect(startup.set(false)).toBe(false);
+  });
   it('reads the exact current executable and startup arguments without registering anything', () => {
     const { startup, adapter, setItems } = fixture();
     expect(startup.status(true)).toBe(false);

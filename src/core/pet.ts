@@ -115,7 +115,8 @@ export class PetBehavior {
     return this.range(35000, 65000);
   }
   private choosePhrase() {
-    const theme = this.preferences.petJokeStyle === 'off' ? 'wholesome' : this.preferences.petJokeStyle;
+    const theme =
+      this.preferences.petJokeStyle === 'off' ? 'wholesome' : this.preferences.petJokeStyle;
     const key = `${this.preferences.petSpecies}:${theme}`;
     let bag = this.phraseBags.get(key);
     if (!bag?.length) {
@@ -211,12 +212,14 @@ export class PetBehavior {
   }
   wake(now: number) {
     this.interact(now);
-    if (this.preferences.petJokeStyle !== 'off') this.say(animalGreetings[this.preferences.petSpecies], now);
+    if (this.preferences.petJokeStyle !== 'off')
+      this.say(animalGreetings[this.preferences.petSpecies], now);
   }
   play(now: number) {
     this.cancelInteraction();
     this.interact(now);
-    if (this.preferences.petJokeStyle !== 'off') this.say(animalPlayLines[this.preferences.petSpecies], now);
+    if (this.preferences.petJokeStyle !== 'off')
+      this.say(animalPlayLines[this.preferences.petSpecies], now);
     this.playUntil = now + 3200;
     this.waveUntil = this.playUntil;
     this.restUntil = this.playUntil + 600;
@@ -237,9 +240,23 @@ export class PetBehavior {
     this.dismiss();
     this.interact(now);
     const reduced = this.preferences.petReducedMotion || reducedMotion;
-    if (!this.transition) this.setPose(reduced ? 'idle' : kind === 'ball' ? 'walking' : this.preferences.petSpecies === 'otter' ? 'floating' : 'waving', now);
+    if (!this.transition)
+      this.setPose(
+        reduced
+          ? 'idle'
+          : kind === 'ball'
+            ? 'walking'
+            : this.preferences.petSpecies === 'otter'
+              ? 'floating'
+              : 'waving',
+        now,
+      );
     const delay = reduced ? 0 : Math.max(0, (this.transition?.until ?? now) - now);
-    this.frame.interaction = { kind, startedAt: now + delay, durationMs: reduced ? 1200 : kind === 'ball' ? 4200 : 3000 };
+    this.frame.interaction = {
+      kind,
+      startedAt: now + delay,
+      durationMs: reduced ? 1200 : kind === 'ball' ? 4200 : 3000,
+    };
   }
   cancelInteraction() {
     delete this.frame.interaction;
@@ -332,7 +349,14 @@ export class PetBehavior {
         this.lastInteraction = now;
         this.restUntil = now + 1000;
         this.nextSpeech = now + this.speechInterval();
-        this.frame.pose = flags.reducedMotion || this.preferences.petReducedMotion ? 'idle' : interaction.kind === 'ball' ? 'walking' : this.preferences.petSpecies === 'otter' ? 'floating' : 'waving';
+        this.frame.pose =
+          flags.reducedMotion || this.preferences.petReducedMotion
+            ? 'idle'
+            : interaction.kind === 'ball'
+              ? 'walking'
+              : this.preferences.petSpecies === 'otter'
+                ? 'floating'
+                : 'waving';
         return this.snapshot();
       }
       this.cancelInteraction();

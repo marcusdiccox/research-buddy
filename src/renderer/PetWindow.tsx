@@ -98,7 +98,14 @@ export function PetWindow() {
     <main
       ref={root}
       className={`desktop-fox species-${view?.preferences.petSpecies ?? 'fox'} ${view?.interaction ? `play-${view.interaction.kind}` : ''} ${view?.preferences.petReducedMotion ? 'motion-reduced' : ''}`}
-      style={view?.interaction ? { '--play-delay': `${view.interaction.startedAt - Date.now()}ms`, '--play-duration': `${view.interaction.durationMs}ms` } as CSSProperties : undefined}
+      style={
+        view?.interaction
+          ? ({
+              '--play-delay': `${view.interaction.startedAt - Date.now()}ms`,
+              '--play-duration': `${view.interaction.durationMs}ms`,
+            } as CSSProperties)
+          : undefined
+      }
       aria-label="Pip desktop companion"
     >
       {view?.phrase && !view.menuOpen && (
@@ -161,7 +168,12 @@ export function PetWindow() {
           direction={view?.direction}
         />
       </button>
-      {view?.interaction && <PetPlay key={`${view.interaction.kind}:${view.interaction.startedAt}`} interaction={view.interaction} />}
+      {view?.interaction && (
+        <PetPlay
+          key={`${view.interaction.kind}:${view.interaction.startedAt}`}
+          interaction={view.interaction}
+        />
+      )}
       {view?.menuOpen && (
         <div
           ref={menu}
@@ -179,6 +191,9 @@ export function PetWindow() {
           <button role="menuitem" onClick={() => act('notes')}>
             <BookOpen size={15} />
             Open my notebook
+          </button>
+          <button role="menuitem" onClick={() => act('today')}>
+            <BookOpen size={15} /> Today
           </button>
           <button role="menuitem" onClick={() => act('reminder')}>
             <Bell size={15} />

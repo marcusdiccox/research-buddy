@@ -28,6 +28,8 @@ export class WindowsStartup {
   /** Reading a snapshot never creates or repairs a login item. */
   status(savedTestValue = false): boolean {
     if (this.options.testMode) return savedTestValue;
+    if (this.options.platform === 'darwin')
+      return this.adapter.getLoginItemSettings({}).openAtLogin;
     if (this.options.platform !== 'win32') return false;
     const { executable } = this.options;
     const state = this.adapter.getLoginItemSettings({ path: executable, args: [...STARTUP_ARGS] });
@@ -50,6 +52,17 @@ export class WindowsStartup {
   set(enabled: unknown): boolean {
     if (typeof enabled !== 'boolean') throw new Error('Choose whether Pip starts with Windows.');
     if (this.options.testMode) return enabled;
+    if (this.options.platform === 'darwin') {
+      if (enabled && !this.options.installed)
+        throw new Error('Install Pip in Applications before enabling login startup.');
+      this.adapter.setLoginItemSettings({ openAtLogin: enabled });
+      const actual = this.status();
+      if (actual !== enabled)
+        throw new Error(
+          'macOS could not change login startup. Check Login Items in System Settings.',
+        );
+      return actual;
+    }
     if (this.options.platform !== 'win32') {
       if (enabled) throw new Error('Start with Windows is available on Windows.');
       return false;

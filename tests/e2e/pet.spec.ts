@@ -162,7 +162,7 @@ test('the shared shortcut toggles Pip and primary click opens the writing bubble
     )
     .toBeTruthy();
   const notes = app.windows().find((p) => p.url().endsWith('#bubble'))!;
-  await expect(notes.getByRole('tab', { name: 'Notes', exact: true })).toHaveAttribute(
+  await expect(notes.getByRole('tab', { name: 'Today', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );

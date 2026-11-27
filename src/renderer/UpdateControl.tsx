@@ -3,6 +3,7 @@ import type { UpdateStatus } from '../shared/contracts';
 
 export function updateLabel(status: UpdateStatus | undefined): string {
   if (!status) return '';
+  if (status.manual) return `v${status.currentVersion} · download updates`;
   switch (status.phase) {
     case 'ready':
       return `Update ${status.version} ready · installs on quit`;
@@ -37,7 +38,11 @@ export function UpdateControl({
       aria-label="Check for updates"
       title={label || 'Check for updates'}
       disabled={['checking', 'available', 'downloading', 'ready'].includes(status?.phase ?? '')}
-      onClick={() => void window.buddy?.call('checkForUpdates').catch(onError)}
+      onClick={() =>
+        void window.buddy
+          ?.call(status?.manual ? 'openReleaseDownloads' : 'checkForUpdates')
+          .catch(onError)
+      }
     >
       {status?.phase === 'ready' ? <Download size={14} /> : <RefreshCw size={14} />}
     </button>

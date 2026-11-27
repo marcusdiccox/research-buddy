@@ -1,7 +1,10 @@
 import type { PetPreferences } from '../shared/contracts.js';
 
 // Each theme keeps its own session bag in PetBehavior, including through settings changes.
-export const petPhrases: Record<Exclude<PetPreferences['petJokeStyle'], 'off'>, readonly string[]> = {
+export const petPhrases: Record<
+  Exclude<PetPreferences['petJokeStyle'], 'off'>,
+  readonly string[]
+> = {
   wholesome: [
     'Your next small step has a tiny fox cheering for it.',
     'I packed a picnic: one snack and several good intentions.',

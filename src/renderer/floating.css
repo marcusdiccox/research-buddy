@@ -344,3 +344,141 @@ html.floating-mode #root {
   border-radius: 6px;
   background: #fafbf4;
 }
+.bubble-form[hidden] {
+  display: none;
+}
+.bubble-tabs {
+  gap: 2px;
+}
+.bubble-tabs button {
+  gap: 4px;
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 10px;
+}
+.today-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  color: #52634f;
+}
+.today-panel > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 3px 9px;
+}
+.today-panel h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+.today-panel > header > span {
+  font-size: 9px;
+  color: #89977e;
+}
+.today-scroll {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  padding: 0 2px;
+}
+.today-reminder {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e7ebdf;
+  gap: 6px;
+}
+.today-item {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  padding: 7px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.today-item > span,
+.today-note > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+.today-item small {
+  color: #8a987c;
+  font-size: 9px;
+}
+.is-overdue .today-item small {
+  color: #ae7c58;
+}
+.today-done {
+  display: grid;
+  place-items: center;
+  border: 1px solid #dce4d2;
+  border-radius: 7px;
+  width: 25px;
+  height: 25px;
+  color: #819574;
+  flex-shrink: 0;
+}
+.today-done:hover {
+  background: #e7eedf;
+}
+.today-panel h3 {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a087;
+  margin: 12px 4px 4px;
+}
+.today-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 4px;
+  text-align: left;
+  font-size: 11px;
+  gap: 8px;
+}
+.today-note:hover,
+.today-item:hover {
+  background: #f0f3e9;
+  border-radius: 6px;
+}
+.today-empty {
+  font-size: 12px;
+  margin: 18px 4px 14px;
+  color: #819474;
+}
+.today-empty small {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #9aa48d;
+}
+.today-panel > footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 2px 2px;
+  border-top: 1px solid #e4e9dc;
+  margin-top: 7px;
+}
+.today-panel > footer button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 5px 8px;
+  border: 1px solid #dbe3d0;
+  border-radius: 7px;
+}
+.capture-shortcut-label {
+  font-size: 9px;
+  color: #87947c;
+  white-space: nowrap;
+}

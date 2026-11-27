@@ -139,7 +139,7 @@ export function CompactSettings() {
               />
             </label>
             <label className="popup-setting popup-toggle">
-              <span>Start with Windows</span>
+              <span>{data?.platform === 'darwin' ? 'Open at login' : 'Start with Windows'}</span>
               <input
                 type="checkbox"
                 checked={settings.startWithWindows}
@@ -159,6 +159,13 @@ export function CompactSettings() {
           <p className="settings-loading">Opening settings…</p>
         )}
         <footer className="settings-footer">
+          <small
+            className="capture-shortcut-label"
+            title="Select text, then press this shortcut. Capture copied text is also in the tray."
+          >
+            {data?.capture?.shortcutLabel ?? 'Ctrl + Alt + N'} · Capture
+            {data?.capture?.shortcutAvailable === false ? ' · use tray' : ''}
+          </small>
           <p
             className={`floating-status ${message?.error || data?.companion?.shortcutAvailable === false ? 'is-error' : ''}`}
             role={message?.error ? 'alert' : 'status'}

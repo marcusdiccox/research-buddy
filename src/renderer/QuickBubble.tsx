@@ -1,5 +1,7 @@
 import { RepeatField } from './RepeatField';
 import { FocusTimer } from './FocusTimer';
+import { TodayBubble } from './TodayBubble';
+import { appendCapture, type CapturePayload } from '../core/capture';
 import type { RepeatRule } from '../shared/contracts';
 import { DateTimeField } from './DateTimeField';
 import {
@@ -10,13 +12,25 @@ import {
   type CSSProperties,
   type FormEvent,
 } from 'react';
-import { ArrowUpRight, Bell, BookOpen, CalendarDays, Settings, X, Pin } from 'lucide-react';
+import { ArrowUpRight, Bell, BookOpen, CalendarDays, Settings, X, Pin, Sun } from 'lucide-react';
 import type { Note, Reminder, Snapshot } from '../shared/contracts';
 import './floating.css';
 
-type Mode = 'notes' | 'reminder' | 'calendar';
-type BubbleLayout = { tailX: number; tailSide: 'top' | 'bottom'; action?: Mode };
+type EditMode = 'notes' | 'reminder' | 'calendar';
+type Mode = EditMode | 'today';
+type BubbleLayout = { tailX: number; tailSide: 'top' | 'bottom'; action?: Mode | 'capture' };
+type EditorDraft = {
+  text: string;
+  dateTime: string;
+  recurrence: RepeatRule;
+  remindEnabled: boolean;
+  noteId?: string;
+  reminderId?: string;
+  dirty: boolean;
+  savedItem: { kind: 'note' | 'reminder'; id: string; fingerprint: string } | null;
+};
 const modes = [
+  { id: 'today', label: 'Today', icon: Sun },
   { id: 'notes', label: 'Notes', icon: BookOpen },
   { id: 'reminder', label: 'Reminder', icon: Bell },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
@@ -55,6 +69,60 @@ export function QuickBubble() {
   const savedItem = useRef<{ kind: 'note' | 'reminder'; id: string; fingerprint: string } | null>(
     null,
   );
+  const lastEditMode = useRef<EditMode>('notes');
+  if (mode !== 'today') lastEditMode.current = mode;
+  const liveEditor = useRef({ text, dateTime, recurrence, remindEnabled });
+  liveEditor.current = { text, dateTime, recurrence, remindEnabled };
+  const captureDrafts = useRef<{ notes?: EditorDraft; reminder?: EditorDraft }>({});
+  const separateDrafts = useRef(false);
+  function editorDraft(): EditorDraft {
+    return {
+      ...liveEditor.current,
+      noteId: noteId.current,
+      reminderId: reminderId.current,
+      savedItem: savedItem.current,
+      dirty: dirty.current,
+    };
+  }
+  function restoreDraft(draft: EditorDraft) {
+    noteId.current = draft.noteId;
+    reminderId.current = draft.reminderId;
+    savedItem.current = draft.savedItem;
+    dirty.current = draft.dirty;
+    liveEditor.current = draft;
+    setText(draft.text);
+    setDateTime(draft.dateTime);
+    setRecurrence(draft.recurrence);
+    setRemindEnabled(draft.remindEnabled);
+  }
+  function applyCapture(payload: CapturePayload) {
+    const previous = editorDraft(),
+      kind = lastEditMode.current === 'notes' ? 'notes' : 'reminder';
+    const noteDraft = kind === 'notes' ? previous : captureDrafts.current.notes;
+    let content = noteDraft?.dirty ? noteDraft.text : '';
+    try {
+      if (payload.text) content = appendCapture(content, payload.text);
+    } catch (error) {
+      setMessage({ text: errorText(error), error: true });
+      return;
+    }
+    captureDrafts.current[kind] = previous;
+    separateDrafts.current = true;
+    const next: EditorDraft = {
+      ...(noteDraft ?? previous),
+      text: content,
+      noteId: undefined,
+      reminderId: undefined,
+      savedItem: null,
+      dirty: !!payload.text || !!content,
+    };
+    restoreDraft(next);
+    captureDrafts.current.notes = next;
+    lastEditMode.current = 'notes';
+    setMode('notes');
+    setMessage({ text: payload.error ?? 'Captured · review and save', error: !!payload.error });
+    requestAnimationFrame(() => textarea.current?.focus());
+  }
   const showError = (error: unknown) => setMessage({ text: errorText(error), error: true });
   const refresh = useCallback(async () => {
     if (!window.buddy) throw new Error('Open this bubble from Pip.');
@@ -66,13 +134,20 @@ export function QuickBubble() {
     setLayout(position);
     if (!initialized.current) {
       initialized.current = true;
-      setMode(position.action ?? 'notes');
+      setMode(position.action === 'capture' ? 'notes' : (position.action ?? 'notes'));
     }
     // Each kind has its own saved identity even though the editor text is shared.
     if (noteId.current && !snapshot.notes.some((item) => item.id === noteId.current))
       noteId.current = undefined;
     if (reminderId.current && !snapshot.reminders.some((item) => item.id === reminderId.current))
       reminderId.current = undefined;
+    if (!busyRef.current) {
+      const capture = await window.buddy.call<CapturePayload | null>('takeCapture');
+      if (capture) {
+        applyCapture(capture);
+        return;
+      }
+    }
     const previous = savedItem.current;
     if (!previous || busyRef.current) return;
     const item =
@@ -115,11 +190,23 @@ export function QuickBubble() {
   useEffect(
     () =>
       window.buddy?.onNavigate((action) => {
+        if (action === 'capture') {
+          void refresh().catch(showError);
+          return;
+        }
         if (action === 'settings') {
           void window.buddy!.call('showFoxSettings').catch(showError);
           return;
         }
-        setMode(action === 'calendar' ? 'calendar' : action === 'reminder' ? 'reminder' : 'notes');
+        setMode(
+          action === 'today'
+            ? 'today'
+            : action === 'calendar'
+              ? 'calendar'
+              : action === 'reminder'
+                ? 'reminder'
+                : 'notes',
+        );
         setMessage(null);
         void refresh().catch(showError);
         requestAnimationFrame(() => textarea.current?.focus());
@@ -191,6 +278,7 @@ export function QuickBubble() {
     } finally {
       busyRef.current = false;
       setBusy(false);
+      void refresh().catch(showError);
     }
   }
   function save(event: FormEvent) {
@@ -207,7 +295,7 @@ export function QuickBubble() {
       });
     });
   }
-  async function openNotebook(action: Mode = mode) {
+  async function openNotebook(action: EditMode = mode === 'today' ? 'notes' : mode) {
     await run(async () => {
       const existing = mode === 'notes' ? noteId.current : reminderId.current;
       const sameKind =
@@ -225,7 +313,26 @@ export function QuickBubble() {
     });
   }
   function changeMode(next: Mode) {
-    if (next !== mode) dirty.current = true;
+    if (next !== 'today') {
+      const previousKind = lastEditMode.current === 'notes' ? 'notes' : 'reminder';
+      const nextKind = next === 'notes' ? 'notes' : 'reminder';
+      if (separateDrafts.current && previousKind !== nextKind) {
+        captureDrafts.current[previousKind] = editorDraft();
+        const other = captureDrafts.current[nextKind];
+        if (other) restoreDraft(other);
+        else
+          restoreDraft({
+            ...editorDraft(),
+            text: '',
+            noteId: undefined,
+            reminderId: undefined,
+            savedItem: null,
+            dirty: false,
+          });
+      }
+      lastEditMode.current = next;
+    }
+    if (next !== mode && next !== 'today' && mode !== 'today') dirty.current = true;
     setMode(next);
     setMessage(null);
   }
@@ -315,9 +422,30 @@ export function QuickBubble() {
             </button>
           ))}
         </nav>
-        <form className="bubble-form" onSubmit={save}>
+        {mode === 'today' && (
+          <TodayBubble
+            data={data}
+            open={(kind, id) =>
+              void run(async () => {
+                await window.buddy!.call('showNotepad', {
+                  action: kind,
+                  ...(kind === 'notes' ? { noteId: id } : { reminderId: id }),
+                });
+                await window.buddy!.call('hideBubble');
+              })
+            }
+            complete={(id) =>
+              void run(async () => {
+                await window.buddy!.call('completeReminder', { id, completed: true });
+                await refresh();
+              })
+            }
+            create={(kind) => changeMode(kind)}
+          />
+        )}
+        <form className="bubble-form" onSubmit={save} hidden={mode === 'today'}>
           <div
-            id="bubble-editor"
+            id={mode === 'today' ? 'bubble-editor-inactive' : 'bubble-editor'}
             role="tabpanel"
             aria-labelledby={`bubble-tab-${mode}`}
             className="bubble-editor"
