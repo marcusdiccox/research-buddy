@@ -187,6 +187,8 @@ html.pet-mode #root {
   transform: rotate(45deg);
 }
 .fox-menu {
+  max-height: 248px;
+  overflow-y: auto;
   position: absolute;
   bottom: 5px;
   left: 10px;
@@ -220,7 +222,7 @@ html.pet-mode #root {
   align-items: center;
   gap: 9px;
   width: 100%;
-  height: 30px;
+  height: 26px;
   padding: 6px 7px;
   border-radius: 6px;
   text-align: left;
@@ -329,3 +331,22 @@ html.pet-mode #root {
 .fox-settings-card {
   grid-row: span 2;
 }
+.pet-play-props { position:absolute; inset:0; pointer-events:none; z-index:3; }
+.pet-ball { position:absolute; left:28px; bottom:29px; width:15px; height:15px; border:2px solid #577465; border-radius:50%; background:conic-gradient(#e7af77 0 25%,#f4ebd5 0 50%,#82a892 0 75%,#f4ebd5 0); box-shadow:2px 2px 0 #30251c20; animation:pet-ball-toss var(--play-duration) var(--play-delay) both; }
+.pet-treat { position:absolute; left:142px; bottom:28px; width:11px; height:10px; border:2px solid #98643d; background:#e3b775; box-shadow:inset 2px 2px #f7d69d,2px 2px 0 #30251c20; transform:rotate(15deg); animation:pet-treat-share var(--play-duration) var(--play-delay) both; }
+.pet-play-heart { position:absolute; left:130px; bottom:74px; color:#c57b82; font-size:15px; animation:pet-heart-rise var(--play-duration) var(--play-delay) both; }
+.pet-play-spark { position:absolute; left:91px; bottom:63px; color:#d8af65; font-size:12px; animation:pet-heart-rise var(--play-duration) var(--play-delay) both; }
+.play-treat .fox-pet-button { animation:pet-snack-bob var(--play-duration) var(--play-delay) both; }
+.species-red-panda.play-treat .fox-pet-button { animation-name:pet-tail-hug; }
+.species-otter.play-treat .fox-pet-button { animation-name:pet-paw-snack; }
+.play-ball .fox-pet-button { animation:pet-ball-catch var(--play-duration) var(--play-delay) both; }
+@keyframes pet-ball-toss { 0% {opacity:0;transform:translate(-18px,-18px) rotate(0)} 8% {opacity:1} 24% {transform:translate(63px,-66px) rotate(90deg)} 42% {transform:translate(112px,0) rotate(190deg)} 54% {transform:translate(98px,-22px) rotate(230deg)} 68% {transform:translate(88px,0) rotate(270deg)} 86% {opacity:1;transform:translate(20px,-12px) rotate(350deg)} 100% {opacity:0;transform:translate(-12px,0) rotate(400deg)} }
+@keyframes pet-treat-share { 0% {opacity:0;transform:translate(25px,-16px) rotate(30deg)} 18%,45% {opacity:1;transform:translate(0,0) rotate(15deg)} 65% {opacity:1;transform:translate(-13px,-12px) scale(.6)} 80%,100% {opacity:0;transform:translate(-16px,-18px) scale(0)} }
+@keyframes pet-heart-rise { 0%,50% {opacity:0;transform:translateY(5px) scale(.5)} 65%,80% {opacity:1;transform:translateY(-5px) scale(1)} 100% {opacity:0;transform:translateY(-17px) scale(.8)} }
+@keyframes pet-snack-bob { 0%,20%,100% {transform:translateY(0)} 35%,65% {transform:translateY(-5px) rotate(-3deg)} 50%,80% {transform:translateY(0) rotate(2deg)} }
+@keyframes pet-tail-hug { 0%,100% {transform:none} 30%,70% {transform:rotate(-7deg) scale(.97)} 50% {transform:rotate(5deg) scale(1.02)} }
+@keyframes pet-paw-snack { 0%,100% {transform:none} 25%,65% {transform:translateY(-3px) rotate(5deg)} 45%,80% {transform:translateY(1px) rotate(-3deg)} }
+@keyframes pet-ball-catch { 0%,20%,100% {transform:translate(0,0)} 42% {transform:translate(8px,-5px)} 60% {transform:translate(6px,0)} 78% {transform:translate(-6px,-3px)} }
+.motion-reduced .pet-play-props span,.motion-reduced .fox-pet-button { animation:none !important; }
+.motion-reduced .pet-play-heart { opacity:1; }
+@media(prefers-reduced-motion:reduce) { .pet-play-props span,.desktop-fox .fox-pet-button {animation:none !important;} }

@@ -260,7 +260,7 @@ export class BuddyStore {
       petSpecies: ['fox', 'red-panda', 'otter'],
       petAppearance: ['red', 'arctic', 'midnight'],
       petRoamArea: ['bottom', 'desktop', 'parked'],
-      petJokeStyle: ['wholesome', 'dad', 'nerdy'],
+      petJokeStyle: ['wholesome', 'dad', 'nerdy', 'off'],
       petChatter: ['off', 'quiet', 'friendly', 'chatty'],
       petShortcut: ['Control+Alt+P', 'Control+Shift+Space', 'Alt+Shift+P'],
     };

@@ -67,7 +67,7 @@ const lines = {
 };
 export function extraAnimalPhrases(
   species: PetPreferences['petSpecies'],
-  theme: PetPreferences['petJokeStyle'],
+  theme: Exclude<PetPreferences['petJokeStyle'], 'off'>,
 ): string[] {
   return species === 'fox' ? [] : lines[species][theme];
 }

@@ -78,7 +78,7 @@ type Flags = {
   dragging?: boolean;
   reducedMotion?: boolean;
 };
-export type PetFrame = Point & Pick<PetView, 'pose' | 'direction' | 'phrase'>;
+export type PetFrame = Point & Pick<PetView, 'pose' | 'direction' | 'phrase' | 'interaction'>;
 export class PetBehavior {
   private frame: PetFrame;
   private restUntil: number;
@@ -95,6 +95,7 @@ export class PetBehavior {
   private wasHovered = false;
   private transition: { until: number; next: PetView['pose'] } | null = null;
   private previousPhrase = '';
+  private urgentUntil = 0;
   private phraseBags = new Map<string, string[]>();
   constructor(
     public preferences: PetPreferences,
@@ -114,7 +115,7 @@ export class PetBehavior {
     return this.range(35000, 65000);
   }
   private choosePhrase() {
-    const theme = this.preferences.petJokeStyle;
+    const theme = this.preferences.petJokeStyle === 'off' ? 'wholesome' : this.preferences.petJokeStyle;
     const key = `${this.preferences.petSpecies}:${theme}`;
     let bag = this.phraseBags.get(key);
     if (!bag?.length) {
@@ -141,6 +142,7 @@ export class PetBehavior {
   }
   configure(preferences: PetPreferences, now: number) {
     this.preferences = preferences;
+    if (preferences.petJokeStyle === 'off' && now >= this.urgentUntil) this.dismiss();
     this.resume(now);
   }
   place(position: Point) {
@@ -150,6 +152,7 @@ export class PetBehavior {
     this.target = null;
   }
   resume(now: number) {
+    this.cancelInteraction();
     this.playUntil = 0;
     this.entrance = null;
     this.target = null;
@@ -208,11 +211,12 @@ export class PetBehavior {
   }
   wake(now: number) {
     this.interact(now);
-    this.say(animalGreetings[this.preferences.petSpecies], now);
+    if (this.preferences.petJokeStyle !== 'off') this.say(animalGreetings[this.preferences.petSpecies], now);
   }
   play(now: number) {
+    this.cancelInteraction();
     this.interact(now);
-    this.say(animalPlayLines[this.preferences.petSpecies], now);
+    if (this.preferences.petJokeStyle !== 'off') this.say(animalPlayLines[this.preferences.petSpecies], now);
     this.playUntil = now + 3200;
     this.waveUntil = this.playUntil;
     this.restUntil = this.playUntil + 600;
@@ -222,13 +226,31 @@ export class PetBehavior {
   }
   tellJoke(now: number) {
     this.interact(now);
+    if (this.preferences.petJokeStyle === 'off') return null;
     return this.say(this.choosePhrase(), now);
   }
+  startInteraction(kind: 'treat' | 'ball', now: number, reducedMotion = false) {
+    if (now < this.urgentUntil) return;
+    this.cancelInteraction();
+    this.target = null;
+    this.entrance = null;
+    this.dismiss();
+    this.interact(now);
+    const reduced = this.preferences.petReducedMotion || reducedMotion;
+    if (!this.transition) this.setPose(reduced ? 'idle' : kind === 'ball' ? 'walking' : this.preferences.petSpecies === 'otter' ? 'floating' : 'waving', now);
+    const delay = reduced ? 0 : Math.max(0, (this.transition?.until ?? now) - now);
+    this.frame.interaction = { kind, startedAt: now + delay, durationMs: reduced ? 1200 : kind === 'ball' ? 4200 : 3000 };
+  }
+  cancelInteraction() {
+    delete this.frame.interaction;
+  }
   announceReminder(message: string, now: number): void {
+    this.cancelInteraction();
     this.entrance = null;
     this.interact(now);
     this.say(message, now);
     this.bubbleUntil = now + this.range(8000, 12000);
+    this.urgentUntil = this.bubbleUntil;
     // Give a sleeping fox time to finish waking before its greeting wave.
     this.waveUntil = now + 2600;
     if (this.transition?.next === 'walking') this.transition.next = 'waving';
@@ -260,6 +282,7 @@ export class PetBehavior {
     flags: Flags,
   ): PetFrame {
     if (flags.visible === false) {
+      this.cancelInteraction();
       this.entrance = null;
       this.dismiss();
       this.frame.pose = 'idle';
@@ -303,6 +326,19 @@ export class PetBehavior {
       } else return this.snapshot();
     }
     if (this.frame.phrase && now >= this.bubbleUntil) this.dismiss();
+    const interaction = this.frame.interaction;
+    if (interaction) {
+      if (now < interaction.startedAt + interaction.durationMs) {
+        this.lastInteraction = now;
+        this.restUntil = now + 1000;
+        this.nextSpeech = now + this.speechInterval();
+        this.frame.pose = flags.reducedMotion || this.preferences.petReducedMotion ? 'idle' : interaction.kind === 'ball' ? 'walking' : this.preferences.petSpecies === 'otter' ? 'floating' : 'waving';
+        return this.snapshot();
+      }
+      this.cancelInteraction();
+      this.setPose('idle', now, flags.reducedMotion);
+      return this.snapshot();
+    }
     const paused = flags.hovered || flags.menuOpen || flags.dragging;
     if (paused) {
       this.restUntil = Math.max(this.restUntil, now + 600);
@@ -315,7 +351,7 @@ export class PetBehavior {
       this.setPose('sleeping', now, flags.reducedMotion);
       return this.snapshot();
     }
-    if (!paused && now >= this.nextSpeech) {
+    if (!paused && now >= this.nextSpeech && this.preferences.petJokeStyle !== 'off') {
       this.say(this.choosePhrase(), now);
       this.nextSpeech = now + this.speechInterval();
     }

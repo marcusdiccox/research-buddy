@@ -106,6 +106,7 @@ export function CompactSettings() {
                 <option value="wholesome">Wholesome</option>
                 <option value="dad">Dad jokes</option>
                 <option value="nerdy">Nerdy</option>
+                <option value="off">No jokes</option>
               </select>
             </label>
             <label className="popup-setting">

@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { PetPlay } from './PetPlay';
 import { BookOpen, Bell, Settings, X, Heart } from 'lucide-react';
 import { animalNames } from '../core/animals';
 import { Fox } from './Fox';
@@ -96,7 +97,8 @@ export function PetWindow() {
   return (
     <main
       ref={root}
-      className={`desktop-fox ${view?.preferences.petReducedMotion ? 'motion-reduced' : ''}`}
+      className={`desktop-fox species-${view?.preferences.petSpecies ?? 'fox'} ${view?.interaction ? `play-${view.interaction.kind}` : ''} ${view?.preferences.petReducedMotion ? 'motion-reduced' : ''}`}
+      style={view?.interaction ? { '--play-delay': `${view.interaction.startedAt - Date.now()}ms`, '--play-duration': `${view.interaction.durationMs}ms` } as CSSProperties : undefined}
       aria-label="Pip desktop companion"
     >
       {view?.phrase && !view.menuOpen && (
@@ -159,6 +161,7 @@ export function PetWindow() {
           direction={view?.direction}
         />
       </button>
+      {view?.interaction && <PetPlay key={`${view.interaction.kind}:${view.interaction.startedAt}`} interaction={view.interaction} />}
       {view?.menuOpen && (
         <div
           ref={menu}
@@ -192,6 +195,12 @@ export function PetWindow() {
               : view?.preferences.petSpecies === 'red-panda'
                 ? 'Tail hug'
                 : 'Say hello'}
+          </button>
+          <button role="menuitem" onClick={() => act('treat')}>
+            <Heart size={15} /> Give treat
+          </button>
+          <button role="menuitem" onClick={() => act('ball')}>
+            <span aria-hidden="true">◉</span> Toss ball
           </button>
           <button role="menuitem" onClick={() => act('hide')}>
             <X size={15} />

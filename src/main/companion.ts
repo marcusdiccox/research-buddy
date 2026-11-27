@@ -100,6 +100,7 @@ export class CompanionController {
     const frame = this.behavior.snapshot();
     return {
       pose: frame.pose,
+      interaction: frame.interaction,
       direction: frame.direction,
       phrase: frame.phrase,
       preferences: {
@@ -221,6 +222,7 @@ export class CompanionController {
     else this.show(true);
   }
   setEngaged(active: boolean) {
+    if (active) this.behavior.cancelInteraction();
     this.engaged = active;
     this.behavior.interact(Date.now());
   }
@@ -354,6 +356,7 @@ export class CompanionController {
     this.publish(true);
   }
   startDrag() {
+    this.behavior.cancelInteraction();
     if (!this.window) return;
     this.behavior.interact(Date.now());
     this.drag = { cursor: screen.getCursorScreenPoint(), origin: this.window.getBounds() };
@@ -376,6 +379,7 @@ export class CompanionController {
     this.behavior.interact(Date.now());
     switch (action) {
       case 'menu':
+        this.behavior.cancelInteraction();
         this.menuOpen = !this.menuOpen;
         break;
       case 'close-menu':
@@ -393,9 +397,15 @@ export class CompanionController {
         this.menuOpen = false;
         this.behavior.play(Date.now());
         break;
+      case 'treat':
+      case 'ball':
+        this.menuOpen = false;
+        this.behavior.startInteraction(action, Date.now(), this.systemReduced);
+        break;
       case 'notes':
       case 'reminder':
       case 'settings':
+        this.behavior.cancelInteraction();
         this.menuOpen = false;
         this.options.openNotebook(action);
         break;

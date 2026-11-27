@@ -90,6 +90,7 @@ export function FoxSettings({
               <option value="wholesome">Cute &amp; wholesome</option>
               <option value="dad">Dad jokes &amp; puns</option>
               <option value="nerdy">Nerdy little jokes</option>
+              <option value="off">No jokes</option>
             </select>
           </label>
         </div>
