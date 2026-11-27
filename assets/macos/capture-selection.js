@@ -1,5 +1,7 @@
 ObjC.import('AppKit');
 ObjC.import('CoreGraphics');
+ObjC.import('ApplicationServices');
+ObjC.import('CoreFoundation');
 function captureSelection() {
   try {
     const foreground = Number($.NSWorkspace.sharedWorkspace.frontmostApplication.processIdentifier);
@@ -13,24 +15,28 @@ function captureSelection() {
     const unchanged = () =>
       Number($.NSWorkspace.sharedWorkspace.frontmostApplication.processIdentifier) === foreground;
     if (!unchanged()) return JSON.stringify({ error: 'foreground_changed' });
-    const board = $.NSPasteboard.generalPasteboard,
-      sequence = Number(board.changeCount);
-    Application('System Events').keystroke('c', { using: ['command down'] });
-    const deadline = Date.now() + 1200;
-    do {
-      delay(0.025);
-      if (!unchanged()) return JSON.stringify({ error: 'foreground_changed' });
-      if (Number(board.changeCount) !== sequence) {
-        const value = board.stringForType($.NSPasteboardTypeString);
-        if (value) {
-          const text = ObjC.unwrap(value);
-          return JSON.stringify(
-            text.length > 200000 ? { error: 'too_long' } : { fresh: true, text },
-          );
-        }
-      }
-    } while (Date.now() < deadline);
-    return JSON.stringify({ error: 'no_selection' });
+    if (!$.AXIsProcessTrusted()) return JSON.stringify({ error: 'permission_required' });
+    const target = $.AXUIElementCreateApplication(foreground);
+    const attribute = (element, name) => {
+      const value = Ref();
+      if ($.AXUIElementCopyAttributeValue(element, $(name), value) !== 0 || !value[0])
+        throw new Error('Unsupported selection');
+      return value[0];
+    };
+    const window = attribute(target, 'AXFocusedWindow'),
+      element = attribute(target, 'AXFocusedUIElement');
+    const text = ObjC.unwrap(attribute(element, 'AXSelectedText'));
+    if (typeof text !== 'string' || !text.trim()) return JSON.stringify({ error: 'no_selection' });
+    if (text.length > 200000) return JSON.stringify({ error: 'too_long' });
+    delay(0.025);
+    if (
+      !unchanged() ||
+      !$.CFEqual(window, attribute(target, 'AXFocusedWindow')) ||
+      !$.CFEqual(element, attribute(target, 'AXFocusedUIElement')) ||
+      text !== ObjC.unwrap(attribute(element, 'AXSelectedText'))
+    )
+      return JSON.stringify({ error: 'foreground_changed' });
+    return JSON.stringify({ fresh: true, text });
   } catch (_) {
     return JSON.stringify({ error: 'copy_failed' });
   }

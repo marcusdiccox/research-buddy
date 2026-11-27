@@ -27,6 +27,57 @@ test.afterEach(async () => {
   await closeTestApp(app);
   rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 });
+
+test('native Reminder navigation restores a parked reminder and keeps the captured note', async () => {
+  await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
+  await bubble.getByRole('textbox', { name: 'Note text' }).fill('Parked reminder');
+  await app.evaluate(({ clipboard }) => clipboard.writeText('Captured note'));
+  await root.evaluate(() => window.buddy!.call('captureCopiedText'));
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Captured note');
+  await root.evaluate(() => window.buddy!.call('petAction', { action: 'reminder' }));
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Parked reminder');
+  await bubble.getByRole('tab', { name: 'Notes', exact: true }).click();
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Captured note');
+  await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Parked reminder');
+});
+test('Today creates a new note without overwriting a saved note', async () => {
+  await bubble.getByRole('textbox', { name: 'Note text' }).fill('First note');
+  await bubble.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(bubble.getByRole('status')).toContainText('Saved locally');
+  await bubble.getByRole('tab', { name: 'Today', exact: true }).click();
+  await bubble.getByRole('button', { name: 'New note', exact: true }).click();
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('');
+  await bubble.getByRole('textbox', { name: 'Note text' }).fill('Second note');
+  await bubble.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect
+    .poll(() =>
+      root.evaluate(async () =>
+        (await window.buddy!.call<any>('snapshot')).notes.map((n: any) => n.body).sort(),
+      ),
+    )
+    .toEqual(['First note', 'Second note']);
+});
+test('a capture can become a reminder when no earlier reminder draft is parked', async () => {
+  await app.evaluate(({ clipboard }) => clipboard.writeText('Captured event'));
+  await root.evaluate(() => window.buddy!.call('captureCopiedText'));
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Captured event');
+  await bubble.getByRole('tab', { name: 'Reminder', exact: true }).click();
+  await expect(bubble.getByRole('textbox', { name: 'Note text' })).toHaveValue('Captured event');
+});
+test('Today keeps functional messages visible and an intentional Today visit counts for the day', async () => {
+  await bubble.getByRole('tab', { name: 'Today', exact: true }).click();
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const w of BrowserWindow.getAllWindows())
+      w.webContents.send('buddy:reminder', 'Fictional meeting soon');
+  });
+  await expect(bubble.getByRole('alert')).toContainText('Fictional meeting soon');
+  await root.evaluate(() => window.buddy!.call('petAction', { action: 'notes' }));
+  await expect(bubble.getByRole('tab', { name: 'Notes', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+});
 test('Today completes recurring reminders and keeps a typed note when switching back', async () => {
   await bubble.getByRole('textbox', { name: 'Note text' }).fill('Keep this draft');
   await root.evaluate(async () => {

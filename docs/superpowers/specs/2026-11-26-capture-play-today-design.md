@@ -74,3 +74,7 @@ Run the existing backend suite, type checking, build and native desktop regressi
 No new cloud provider, hosted AI, Google event import, additional animal species, reward system or backup-restore feature is part of this change. The builder may choose exact spacing, icons, interaction durations, helper implementation details and small internal abstractions within the behavior above. A later implementation plan will divide the work after this design is approved.
 
 Read-only builder review found no important unanswered planning questions.
+
+## Approved scope addition
+
+During implementation the user additionally requested a Mac version and committing all work to GitHub. Package a universal Intel/Apple-silicon app as DMG and ZIP on a macOS runner, with native login startup and a Mac selected-text helper. Use Command+Option+N for Mac capture. The Mac helper requires user-granted Accessibility/Automation for copying selections; copied-text capture remains available without that automation. The first Mac build is ad-hoc signed, not Developer ID signed or notarized, so Mac update controls open release downloads rather than claiming unattended updates. Exercise the packaged universal app's feature tests on macOS CI.

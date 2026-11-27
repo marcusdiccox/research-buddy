@@ -2,13 +2,15 @@
 
 **Pip is a little friend who lives on your desktop.** Choose a fox, red panda or otter to stroll, blink, stretch awake, tell gentle jokes and offer a paw when you need one. Click Pip for your notes, research and reminders.
 
-**Status: early Windows build · companion visibility fix 0.9.2.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
+**Status: early Windows and Mac build · capture, play and Today update 0.10.0.** Notes work locally without an account. Optional Google Calendar sync needs an app registration and Google sign-in; hosted AI remains future work.
 
 ![Pip’s floating reminder bubble with a fictional appointment](docs/screenshots/reminder-bubble.png)
 
 ## Try it
 
-[Download Pip for Windows](https://github.com/marcusdiccox/research-buddy/releases/latest). Open **Pip-Setup-0.9.2.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+[Download Pip](https://github.com/marcusdiccox/research-buddy/releases/latest). On Windows, open **Pip-Setup-0.10.0.exe** and follow the installer. It adds desktop and Start menu shortcuts and enables **Start with Windows** on first install. Settings lets you turn automatic startup off; upgrades preserve that choice. No terminal is needed.
+
+On Mac, open **Pip-0.10.0-mac-universal.dmg** and drag Research Buddy into Applications. One universal app includes Apple silicon and Intel. Login startup is optional. The first Mac build is ad-hoc signed, not notarized; Mac updates use release downloads. [Mac setup and capture permissions](docs/mac-setup.md).
 
 Install 0.9.0 or newer once to enable automatic updates. Installed Windows builds check this repository's stable GitHub releases after startup and every six hours, download updates quietly and install when you quit Pip. The small refresh button in Settings checks manually and shows update status. Shutdown/log-off defers installation. Development, unpacked and test builds do not auto-update. Source commits alone do not trigger downloads.
 
@@ -16,7 +18,7 @@ After installation, open **Research Buddy** from the desktop or Start menu. Quit
 
 Development builds are also available under [Windows builds](https://github.com/marcusdiccox/research-buddy/actions/workflows/ci.yml). A standard `npm run pack` creates `release/win-unpacked/Research Buddy.exe`; `npm run make` creates the installer in `release/`. Unpacked builds do not register themselves for automatic startup.
 
-1. Click Pip for an editable speech bubble with **Notes**, **Reminder**, and **Calendar** tabs. Pip stays still while you write. **Saved** opens searchable notes and reminders, with groups and recoverable Trash. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal fox settings.
+1. Click Pip for a compact bubble with **Today**, **Notes**, **Reminder**, and **Calendar** tabs. The first ordinary opening each local day shows Today; startup itself does not open a bubble. Pip stays still while you write. **Saved** opens searchable notes and reminders, with groups and recoverable Trash. **Open notebook** expands the current note/reminder into the larger editor; its **All research tools** option opens the research features below. The pin keeps your bubble visible when you switch apps; otherwise it tucks away without losing the draft. The gear opens minimal companion settings.
 2. Open a note and choose **Quick summary**. Click **See source** to check any passage.
 3. Use **Ask my notes** to find relevant passages across the current workspace.
 4. Add a reminder, or record your thinking in **Thesis journal**.
@@ -32,11 +34,22 @@ Use the small notepad’s Settings button, or right-click Pip → **Fox settings
 - **Appearance:** Natural, Arctic or Midnight for every animal. Switching animals keeps the color.
 - **Bottom edge**, **whole screen**, or **stay where I put Pip**.
 - **Cute & wholesome**, **dad jokes & puns**, or **nerdy little jokes**.
+- **No jokes** turns off casual speech while preserving reminders and functional messages.
 - Reduced motion and your preferred show/hide shortcut.
 
 Pip is smaller now: an 80px control, random 25–180px trips at 12–24px/s, with 3½–7s rests. It chooses a fresh direction each trip and turns away near the screen edges. Hover stops it so you can click. The background is transparent and unused space passes clicks through. Small joke bubbles appear automatically while Pip is awake. Its 97 lines are shuffled within each theme without repeats until the pool is exhausted. Pip curls up after two minutes without fox interaction; hovering or clicking wakes it with a stretch.
 
 The red panda hugs its ringed tail. The otter washes its cheeks and sometimes takes a slower 12–18px/s paddle, with separate transitions into and out of swimming. Right-click for **Tail hug**, **Float a little** or **Say hello**. Each animal has its own greeting and additional joke lines. Both new animals have generated four-frame movement and sit/sleep/wake transition sheets; all colors and reduced motion use the same renderer.
+
+Right-click for **Give treat** or **Toss ball**. Pip reacts with small paws/hops and pixel-style treat, ball and heart props. All three animals and colors work; sleeping pets wake first. Play settles back down afterward, urgent reminders take priority, and reduced motion uses a static reaction.
+
+## Capture and Today
+
+Select text, then press **Ctrl+Alt+N** on Windows or **Command+Option+N** on Mac to bring it into Notes for review. **Save** remains explicit. A capture appends to an unsaved note or starts a new note after the previous one was saved. An unsaved reminder is kept separately. The tray's **Capture copied text** action is a fallback when selection copying is unsupported or a shortcut conflicts.
+
+Capture is local and only runs when requested; it never watches clipboard history. Windows uses ordinary Copy, which can replace clipboard contents, and checks that the clipboard came from the selected app. Mac uses the accessible selected-text attribute and requires Accessibility permission; unsupported apps use the copied-text fallback. Existing indentation and blank lines are preserved, within the note size limit.
+
+**Today** shows overdue and today's incomplete reminders plus three recent notes, using the local calendar day. Complete a reminder, open an existing item, or start a note/reminder without a separate dashboard. Existing recurrence and calendar sync still apply; other Google Calendar events are not imported.
 
 ## Routines
 

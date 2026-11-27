@@ -13,6 +13,9 @@ public static class PipCapture {
  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
  [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int key);
  [DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
+ [DllImport("user32.dll")] public static extern IntPtr GetClipboardOwner();
+ [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+ public static uint ProcessOf(IntPtr window) {uint process;GetWindowThreadProcessId(window,out process);return process;}
  [DllImport("user32.dll",SetLastError=true)] static extern uint SendInput(uint count, INPUT[] input, int size);
  public static bool Copy() { INPUT[] a=new INPUT[4]; ushort[] keys={0x11,0x43,0x43,0x11}; for(int i=0;i<4;i++){a[i].type=1;a[i].data.ki.vk=keys[i];a[i].data.ki.flags=(uint)(i>=2?2:0);} return SendInput(4,a,Marshal.SizeOf(typeof(INPUT)))==4; }
 }
@@ -20,6 +23,7 @@ public static class PipCapture {
 } catch { [Console]::WriteLine('{"ready":false}'); exit }
 function Get-PipCaptureResult {
 $foreground = [PipCapture]::GetForegroundWindow()
+$sourceProcess = [PipCapture]::ProcessOf($foreground)
 $deadline = [DateTime]::UtcNow.AddSeconds(2)
 do {
  $held = $false
@@ -36,8 +40,12 @@ do {
  Start-Sleep -Milliseconds 25
  if($foreground -ne [PipCapture]::GetForegroundWindow()){ @{error='foreground_changed'}|ConvertTo-Json -Compress; return }
  if([PipCapture]::GetClipboardSequenceNumber() -ne $sequence) {
+  $readSequence=[PipCapture]::GetClipboardSequenceNumber()
+  $owner=[PipCapture]::GetClipboardOwner()
+  if($owner -eq [IntPtr]::Zero -or [PipCapture]::ProcessOf($owner) -ne $sourceProcess){ @{error='copy_failed'}|ConvertTo-Json -Compress; return }
   if([System.Windows.Forms.Clipboard]::ContainsText()) {
    $text=[System.Windows.Forms.Clipboard]::GetText()
+   if($readSequence -ne [PipCapture]::GetClipboardSequenceNumber() -or $owner -ne [PipCapture]::GetClipboardOwner() -or $foreground -ne [PipCapture]::GetForegroundWindow()){ @{error='foreground_changed'}|ConvertTo-Json -Compress; return }
    if($text.Length -gt 200000){ @{error='too_long'}|ConvertTo-Json -Compress; return }
    @{fresh=$true;text=$text}|ConvertTo-Json -Compress; return
   }

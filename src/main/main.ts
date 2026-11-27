@@ -26,6 +26,7 @@ import { ReminderChannel } from '../core/reminder-channel.js';
 import { FocusSession } from '../core/focus.js';
 import { localDayKey, ordinaryBubbleMode } from '../core/today.js';
 import { SelectionCapture } from './capture.js';
+import { ActivationGate } from '../core/activation.js';
 import { validateCapture, type CapturePayload } from '../core/capture.js';
 import { FocusWindow } from './focus-window.js';
 import { REMINDER_LEAD_MINUTES, formatReminderAlert } from '../core/reminder-policy.js';
@@ -92,6 +93,7 @@ const captureShortcut = 'CommandOrControl+Alt+N';
 let captureShortcutAvailable = false;
 let pendingCapture: CapturePayload | null = null;
 let captureRunning = false;
+const activationGate = new ActivationGate();
 const iconPath = join(here, '../../assets/pip.png');
 function changed() {
   if (db && !db.settings().petVisible && writingBubble?.isVisible()) writingBubble.hide();
@@ -297,7 +299,12 @@ async function captureText(copied = false) {
     } else payload = await selectionCapture.capture();
     if (quitting) return;
     pendingCapture = payload;
-    await showBubble('capture');
+    try {
+      await showBubble('capture');
+    } catch (error) {
+      pendingCapture = null;
+      throw error;
+    }
   } finally {
     captureRunning = false;
   }
@@ -533,6 +540,12 @@ else {
       setInterval(focusStatus, 250).unref();
       setInterval(notifyDue, 15000).unref();
       setTimeout(notifyDue, 1500).unref();
+      if (
+        activationGate.markReady(
+          process.platform === 'darwin' && app.getLoginItemSettings().wasOpenedAtLogin,
+        )
+      )
+        openNotepad();
     })
     .catch((error) => {
       dialog.showErrorBox('Research Buddy could not open', String(error));
@@ -552,7 +565,9 @@ app.on('will-quit', () => {
   companion?.dispose();
   db?.close();
 });
-app.on('activate', () => openNotepad());
+app.on('activate', () => {
+  if (!testMode && activationGate.activate()) openNotepad();
+});
 
 ipcMain.handle('buddy', async (event, action: unknown, raw: unknown) => {
   const sender = BrowserWindow.fromWebContents(event.sender);

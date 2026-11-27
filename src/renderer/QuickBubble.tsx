@@ -1,6 +1,7 @@
 import { RepeatField } from './RepeatField';
 import { FocusTimer } from './FocusTimer';
 import { TodayBubble } from './TodayBubble';
+import { localDayKey } from '../core/today';
 import { appendCapture, type CapturePayload } from '../core/capture';
 import type { RepeatRule } from '../shared/contracts';
 import { DateTimeField } from './DateTimeField';
@@ -198,7 +199,7 @@ export function QuickBubble() {
           void window.buddy!.call('showFoxSettings').catch(showError);
           return;
         }
-        setMode(
+        changeMode(
           action === 'today'
             ? 'today'
             : action === 'calendar'
@@ -323,11 +324,11 @@ export function QuickBubble() {
         else
           restoreDraft({
             ...editorDraft(),
-            text: '',
+            text: nextKind === 'reminder' ? editorDraft().text : '',
             noteId: undefined,
             reminderId: undefined,
             savedItem: null,
-            dirty: false,
+            dirty: nextKind === 'reminder' && !!editorDraft().text,
           });
       }
       lastEditMode.current = next;
@@ -335,6 +336,31 @@ export function QuickBubble() {
     if (next !== mode && next !== 'today' && mode !== 'today') dirty.current = true;
     setMode(next);
     setMessage(null);
+    if (next === 'today')
+      void window.buddy
+        ?.call('settings', { lastTodayDate: localDayKey(new Date()) })
+        .catch(showError);
+  }
+  function createFromToday(next: EditMode) {
+    const previousKind = lastEditMode.current === 'notes' ? 'notes' : 'reminder';
+    changeMode(next);
+    if (!dirty.current) {
+      restoreDraft({
+        ...editorDraft(),
+        text: '',
+        noteId: undefined,
+        reminderId: undefined,
+        savedItem: null,
+        dirty: false,
+      });
+    } else if (
+      !separateDrafts.current &&
+      previousKind !== (next === 'notes' ? 'notes' : 'reminder')
+    ) {
+      noteId.current = undefined;
+      reminderId.current = undefined;
+      savedItem.current = null;
+    }
   }
 
   return (
@@ -440,8 +466,16 @@ export function QuickBubble() {
                 await refresh();
               })
             }
-            create={(kind) => changeMode(kind)}
+            create={(kind) => createFromToday(kind)}
           />
+        )}
+        {mode === 'today' && (
+          <p
+            className={`floating-status ${message?.error ? 'is-error' : ''}`}
+            role={message?.error || reminderNotice ? 'alert' : 'status'}
+          >
+            {(message?.error ? message.text : (reminderNotice ?? message?.text)) ?? '\u00a0'}
+          </p>
         )}
         <form className="bubble-form" onSubmit={save} hidden={mode === 'today'}>
           <div
