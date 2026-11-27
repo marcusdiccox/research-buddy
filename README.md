@@ -51,6 +51,8 @@ Capture is local and only runs when requested; it never watches clipboard histor
 
 **Today** shows overdue and today's incomplete reminders plus three recent notes, using the local calendar day. Complete a reminder, open an existing item, or start a note/reminder without a separate dashboard. Existing recurrence and calendar sync still apply; other Google Calendar events are not imported.
 
+![Pip's Today bubble with fictional reminders](docs/screenshots/today-bubble.png)
+
 ## Routines
 
 - **Repeating reminders:** None, Daily, Weekdays, Weekly or Monthly. Mark done advances the same reminder to its next future local occurrence, retaining the five warning checkpoints. Monthly dates clamp short months and retain the original day. A nonexistent DST time is skipped. Google sync updates the same event to its next occurrence; it does not create a Google recurring series.

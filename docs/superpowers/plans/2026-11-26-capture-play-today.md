@@ -28,31 +28,31 @@
 
 **Files:** src/core/pet.ts, src/shared/contracts.ts, src/core/store.ts, src/main/companion.ts, src/renderer/{PetWindow,CompactSettings,App}.tsx, src/renderer/pet.css; tests/pet-interactions.test.ts and pet desktop tests.
 **Interfaces:** PetBehavior.startInteraction(kind: 'treat'|'ball', now: number), cancelInteraction(); PetView.interaction optional {kind, startedAt, durationMs}; petJokeStyle additionally accepts 'off'.
-- [ ] Write and run failing tests for No jokes, reminder retention, play completion/cancellation, sleep wake and reduced motion.
-- [ ] Implement the timeline and main-process cancellation; render species-specific small CSS/pixel props and menu actions; add all No jokes selectors.
-- [ ] Run focused tests, full backend suite and type checking; commit the working feature.
+- [x] Write and run failing tests for No jokes, reminder retention, play completion/cancellation, sleep wake and reduced motion.
+- [x] Implement the timeline and main-process cancellation; render species-specific small CSS/pixel props and menu actions; add all No jokes selectors.
+- [x] Run focused tests, full backend suite and type checking; commit the working feature.
 
 ### Task 2: Today mode
 
 **Files:** new src/core/today.ts, src/renderer/TodayBubble.tsx; existing QuickBubble, main, contracts, store, preload and floating CSS; tests/today.test.ts and new desktop coverage.
 **Interfaces:** localDayKey(date: Date): string; todayItems(snapshot, now) returns overdue, upcoming and recentNotes; NotebookAction includes 'today'; Settings.lastTodayDate stores a local day key.
-- [ ] Write and run failing date-boundary/filtering tests plus first-open, draft-preservation and recurrence desktop cases.
-- [ ] Add the compact fourth mode, once-per-local-day ordinary opening, explicit tray/pet access, item links and completion controls. Keep existing drafts mounted.
-- [ ] Run backend and relevant desktop tests, type checking; commit.
+- [x] Write and run failing date-boundary/filtering tests plus first-open, draft-preservation and recurrence desktop cases.
+- [x] Add the compact fourth mode, once-per-local-day ordinary opening, explicit tray/pet access, item links and completion controls. Keep existing drafts mounted.
+- [x] Run backend and relevant desktop tests, type checking; commit.
 
 ### Task 3: Quick capture
 
 **Files:** new src/core/capture.ts, src/main/capture.ts, assets/windows/capture-selection.ps1; existing QuickBubble, preload, contracts, main and settings; tests/capture.test.ts and desktop coverage.
 **Interfaces:** validateCapture(text: unknown): string; appendCapture(draft: string, captured: string): string; CaptureController returns {text?,error?} and owns shortcut registration/child lifecycle; preload exposes an authenticated capture-payload read action.
-- [ ] Write and run failing validation, clipboard-sequence, pending-capture and draft-retention tests.
-- [ ] Implement the Windows key-release/foreground/clipboard sequence helper and bounded child wrapper. Register Ctrl+Alt+N, add copied-text fallback and concise settings status. Deliver one consumable payload after showing Notes.
-- [ ] Preserve an unsaved reminder separately during capture; a saved note gets a new draft, not an update. Validate appended text before changing the draft.
-- [ ] Run backend, capture desktop and controlled native scratch-selection tests; commit.
+- [x] Write and run failing validation, clipboard-sequence, pending-capture and draft-retention tests.
+- [x] Implement the Windows key-release/foreground/clipboard sequence helper and bounded child wrapper. Register Ctrl+Alt+N, add copied-text fallback and concise settings status. Deliver one consumable payload after showing Notes.
+- [x] Preserve an unsaved reminder separately during capture; a saved note gets a new draft, not an update. Validate appended text before changing the draft.
+- [x] Run backend, capture desktop and controlled native scratch-selection tests; commit.
 
 ### Task 4: Release and installed copy
 
 **Files:** package versions, README, release notes and verification record.
-- [ ] Add the subsequently requested universal Mac DMG/ZIP, native login startup, selection-capture helper and manual release-download updates; run backend and packaged feature tests on macOS CI.
-- [ ] Run full backend/type/build/native desktop checks; visually inspect fictional-profile Today/play/capture. Obtain one independent whole-branch review, fix material findings with regression tests.
-- [ ] Build 0.10.0, verify archive and updater metadata, push source and publish only after hosted Windows checks pass.
-- [ ] Back up production data, inspect active notes/focus, install and open the user's updated copy, then verify its version, data and visibility.
+- [x] Add the subsequently requested universal Mac DMG/ZIP, native login startup, selection-capture helper and manual release-download updates; run backend and packaged feature tests on macOS CI.
+- [x] Run full backend/type/build/native desktop checks; visually inspect fictional-profile Today/play/capture. Obtain one independent whole-branch review, fix material findings with regression tests.
+- [x] Build 0.10.0, verify archive and updater metadata, push source and publish only after hosted Windows checks pass.
+- [x] Back up production data, inspect active notes/focus, install and open the user's updated copy, then verify its version, data and visibility.
